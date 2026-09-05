@@ -13,7 +13,8 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    // origin: "http://localhost:517",
+    origin: "https://event-admin-one.vercel.app/",
   })
 );
 
@@ -44,6 +45,9 @@ app.use(
   express.static(uploadFolder)
 );
 
+app.use("/",(req,res)=>{
+  console.log("test api")
+})
 // =====================================================
 // ROUTES
 // =====================================================
