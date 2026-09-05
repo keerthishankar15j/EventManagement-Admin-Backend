@@ -14,7 +14,8 @@ const app = express();
 app.use(
   cors({
     // origin: "http://localhost:517",
-    origin: "https://event-admin-one.vercel.app/",
+    // origin: "https://event-admin-one.vercel.app/",
+    origin: "*",
   })
 );
 
@@ -45,10 +46,11 @@ app.use(
   express.static(uploadFolder)
 );
 
-app.use("/",(req,res)=>{
-  res.end("working..........")
-  console.log("test api")
-})
+app.get("/", (req, res) => {
+    res.json({
+        message: "Admin API is working!"
+    });
+});
 // =====================================================
 // ROUTES
 // =====================================================
@@ -57,6 +59,7 @@ app.use(
   "/events",
   eventRoutes
 );
+
 
 // =====================================================
 // MONGODB
