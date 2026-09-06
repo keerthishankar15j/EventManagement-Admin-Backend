@@ -6,32 +6,29 @@ const fs = require("fs");
 // UPLOAD FOLDER
 // =====================================================
 
-const uploadPath = path.join(
-  __dirname,
-  "../../uploads"
-);
+const uploadPath = path.join(__dirname, "../../uploads");
 
-// Create uploads folder automatically
 if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, {
     recursive: true,
   });
 }
 
+console.log("=================================");
 console.log("UPLOAD FOLDER:", uploadPath);
+console.log("=================================");
 
 // =====================================================
 // STORAGE
 // =====================================================
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: (req, file, cb) => {
     cb(null, uploadPath);
   },
 
-  filename: function (req, file, cb) {
-    const extension =
-      path.extname(file.originalname);
+  filename: (req, file, cb) => {
+    const extension = path.extname(file.originalname);
 
     const fileName =
       Date.now() +
@@ -48,6 +45,13 @@ const storage = multer.diskStorage({
 // =====================================================
 
 const fileFilter = (req, file, cb) => {
+  console.log("=================================");
+  console.log("MULTER FILE RECEIVED");
+  console.log("FIELD NAME:", file.fieldname);
+  console.log("FILE NAME:", file.originalname);
+  console.log("MIME TYPE:", file.mimetype);
+  console.log("=================================");
+
   const allowedTypes = [
     "image/jpeg",
     "image/jpg",
@@ -61,7 +65,8 @@ const fileFilter = (req, file, cb) => {
     cb(
       new Error(
         "Only JPG, JPEG, PNG and WEBP images are allowed"
-      )
+      ),
+      false
     );
   }
 };
@@ -78,5 +83,9 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024,
   },
 });
+
+// =====================================================
+// EXPORT
+// =====================================================
 
 module.exports = upload;
