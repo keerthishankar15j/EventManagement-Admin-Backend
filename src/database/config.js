@@ -5,7 +5,7 @@ const connectDB = async () => {
     try {
 
         await mongoose.connect(
-            "mongodb://127.0.0.1:27017/eventmanagement"
+            "mongodb+srv://keerthiga:keerthi15j@cluster0.06b7vqp.mongodb.net/?appName=Cluster0"
         );
 
         console.log("Database connected!!");

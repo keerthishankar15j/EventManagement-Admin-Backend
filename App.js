@@ -1,7 +1,9 @@
+
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose");
 const path = require("path");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 const eventRoutes = require("./src/Router/EventRouter");
 
