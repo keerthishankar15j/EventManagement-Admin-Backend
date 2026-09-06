@@ -1,82 +1,80 @@
-const eventModel = require("../Model/EventModel");
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
 
+require("dotenv").config();
 
-// =====================================================
-// CREATE EVENT
-// =====================================================
+const eventRoutes = require("./src/Router/EventRouter");
 
-const createEvent = async (data) => {
-
-    return await eventModel.create(data);
-
-};
-
+const app = express();
 
 // =====================================================
-// GET ALL EVENTS
+// MIDDLEWARE
 // =====================================================
 
-const getEvents = async () => {
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 
-    return await eventModel.find();
+app.use(express.json());
 
-};
-
-
-// =====================================================
-// GET SINGLE EVENT
-// =====================================================
-
-const getEventById = async (id) => {
-
-    return await eventModel.findById(id);
-
-};
-
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
 
 // =====================================================
-// UPDATE EVENT
+// ROOT
 // =====================================================
 
-const updateEvent = async (id, data) => {
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Admin API is working!",
+  });
+});
 
-    return await eventModel.findByIdAndUpdate(
+// =====================================================
+// EVENT ROUTES
+// =====================================================
 
-        id,
+app.use("/events", eventRoutes);
 
-        data,
+// =====================================================
+// MONGODB
+// =====================================================
 
-        {
-            new: true,
-            runValidators: true
-        }
-
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB connected");
+  })
+  .catch((error) => {
+    console.error(
+      "MongoDB connection error:",
+      error
     );
-
-};
-
+  });
 
 // =====================================================
-// DELETE EVENT
+// LOCAL SERVER
 // =====================================================
 
-const deleteEvent = async (id) => {
+const PORT = process.env.PORT || 9000;
 
-    return await eventModel.findByIdAndDelete(id);
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(
+      `Server running on port ${PORT}`
+    );
+  });
+}
 
-};
+// =====================================================
+// EXPORT FOR DEPLOYMENT
+// =====================================================
 
-
-module.exports = {
-
-    createEvent,
-
-    getEvents,
-
-    getEventById,
-
-    updateEvent,
-
-    deleteEvent
-
-};
+module.exports = app;
