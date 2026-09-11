@@ -36,16 +36,30 @@ const eventSchema = new mongoose.Schema(
       trim: true,
     },
 
+    category: {
+      type: String,
+      required: true,
+      enum: [
+        "Music",
+        "Conferences",
+        "Workshop",
+        "Sports",
+        "Technology",
+        "Education",
+        "Entertainment",
+        "Other",
+      ],
+    },
+
     tickets: {
       type: Number,
       required: true,
     },
 
-    status: {
-      type: String,
+    ticketPrice: {
+      type: Number,
       required: true,
-      enum: ["Upcoming", "Ongoing", "Completed"],
-      default: "Upcoming",
+      min: 0,
     },
 
     image: {
