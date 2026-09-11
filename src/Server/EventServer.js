@@ -20,61 +20,83 @@ app.use(
 
 app.use(express.json());
 
-app.use(
-  express.urlencoded({
-    extended: true,
-  })
-);
-
 // =====================================================
-// ROOT
+// MONGODB CONNECTION
 // =====================================================
 
-app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Admin API is working!",
-  });
+let isConnected = false;
+
+const connectDB = async () => {
+  if (isConnected) {
+    return;
+  }
+
+  if (!process.env.MONGO_URI) {
+    throw new Error("MONGO_URI is not defined");
+  }
+
+  await mongoose.connect(process.env.MONGO_URI);
+
+  isConnected = true;
+
+  console.log("MongoDB connected successfully");
+};
+
+// =====================================================
+// TEST ROUTE
+// =====================================================
+
+app.get("/", async (req, res) => {
+  try {
+    await connectDB();
+
+    res.json({
+      success: true,
+      message: "Admin API is working!",
+      database: "Connected",
+    });
+  } catch (error) {
+    console.log("DATABASE ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+    });
+  }
 });
 
 // =====================================================
 // EVENT ROUTES
 // =====================================================
 
-app.use("/events", eventRoutes);
+app.use("/events", async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.log("DATABASE ERROR:", error);
 
-// =====================================================
-// MONGODB
-// =====================================================
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-  })
-  .catch((error) => {
-    console.error(
-      "MongoDB connection error:",
-      error
-    );
-  });
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+    });
+  }
+}, eventRoutes);
 
 // =====================================================
 // LOCAL SERVER
 // =====================================================
 
-const PORT = process.env.PORT || 9000;
-
 if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 9000;
+
   app.listen(PORT, () => {
-    console.log(
-      `Server running on port ${PORT}`
-    );
+    console.log(`Server running on port ${PORT}`);
   });
 }
 
 // =====================================================
-// EXPORT FOR DEPLOYMENT
+// EXPORT FOR VERCEL
 // =====================================================
 
 module.exports = app;

@@ -9,12 +9,11 @@ const router = express.Router();
 // MULTER CONFIGURATION
 // =====================================================
 
-// Store image temporarily in memory
 const upload = multer({
   storage: multer.memoryStorage(),
 
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5 MB
+    fileSize: 5 * 1024 * 1024,
   },
 
   fileFilter: (req, file, cb) => {
@@ -127,9 +126,7 @@ router.post("/create", upload.single("image"), async (req, res) => {
 
 router.get("/getevents", async (req, res) => {
   try {
-    const events = await eventModel
-      .find()
-      .sort({ createdAt: -1 });
+    const events = await eventModel.find().sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
@@ -151,9 +148,7 @@ router.get("/getevents", async (req, res) => {
 
 router.get("/get/:id", async (req, res) => {
   try {
-    const event = await eventModel.findById(
-      req.params.id
-    );
+    const event = await eventModel.findById(req.params.id);
 
     if (!event) {
       return res.status(404).json({
@@ -180,97 +175,72 @@ router.get("/get/:id", async (req, res) => {
 // UPDATE EVENT
 // =====================================================
 
-router.put(
-  "/update/:id",
-  upload.single("image"),
-  async (req, res) => {
-    try {
-      console.log("=================================");
-      console.log("UPDATE EVENT");
-      console.log("ID:", req.params.id);
-      console.log("BODY:", req.body);
-      console.log("FILE:", req.file ? req.file.originalname : "NO FILE");
-      console.log("=================================");
+router.put("/update/:id", upload.single("image"), async (req, res) => {
+  try {
+    console.log("=================================");
+    console.log("UPDATE EVENT");
+    console.log("ID:", req.params.id);
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file ? req.file.originalname : "NO FILE");
+    console.log("=================================");
 
-      const {
-        name,
-        organizer,
-        date,
-        time,
-        location,
-        description,
-        category,
-        tickets,
-        ticketPrice,
-      } = req.body;
+    const {
+      name,
+      organizer,
+      date,
+      time,
+      location,
+      description,
+      category,
+      tickets,
+      ticketPrice,
+    } = req.body;
 
-      // =================================================
-      // CHECK EVENT
-      // =================================================
+    const existingEvent = await eventModel.findById(req.params.id);
 
-      const existingEvent = await eventModel.findById(
-        req.params.id
-      );
-
-      if (!existingEvent) {
-        return res.status(404).json({
-          success: false,
-          message: "Event not found",
-        });
-      }
-
-      // =================================================
-      // UPDATE DATA
-      // =================================================
-
-      existingEvent.name = name;
-      existingEvent.organizer = organizer;
-      existingEvent.date = date;
-      existingEvent.time = time;
-      existingEvent.location = location;
-      existingEvent.description = description;
-      existingEvent.category = category;
-      existingEvent.tickets = Number(tickets);
-      existingEvent.ticketPrice = Number(ticketPrice);
-
-      // =================================================
-      // UPDATE IMAGE ONLY IF NEW IMAGE IS SELECTED
-      // =================================================
-
-      if (req.file) {
-        existingEvent.image = `data:${
-          req.file.mimetype
-        };base64,${req.file.buffer.toString("base64")}`;
-      }
-
-      // =================================================
-      // SAVE
-      // =================================================
-
-      const updatedEvent =
-        await existingEvent.save();
-
-      console.log(
-        "EVENT UPDATED:",
-        updatedEvent._id
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "Event updated successfully",
-        data: updatedEvent,
-      });
-    } catch (error) {
-      console.log("UPDATE EVENT ERROR:", error);
-
-      return res.status(500).json({
+    if (!existingEvent) {
+      return res.status(404).json({
         success: false,
-        message:
-          error.message || "Failed to update event",
+        message: "Event not found",
       });
     }
+
+    // Update fields
+    existingEvent.name = name;
+    existingEvent.organizer = organizer;
+    existingEvent.date = date;
+    existingEvent.time = time;
+    existingEvent.location = location;
+    existingEvent.description = description;
+    existingEvent.category = category;
+    existingEvent.tickets = Number(tickets);
+    existingEvent.ticketPrice = Number(ticketPrice);
+
+    // Update image only if a new image is selected
+    if (req.file) {
+      existingEvent.image = `data:${req.file.mimetype};base64,${req.file.buffer.toString(
+        "base64"
+      )}`;
+    }
+
+    const updatedEvent = await existingEvent.save();
+
+    console.log("EVENT UPDATED:", updatedEvent._id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Event updated successfully",
+      data: updatedEvent,
+    });
+  } catch (error) {
+    console.log("UPDATE EVENT ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update event",
+    });
   }
-);
+});
 
 // =====================================================
 // DELETE EVENT
@@ -278,10 +248,7 @@ router.put(
 
 router.delete("/delete/:id", async (req, res) => {
   try {
-    const deletedEvent =
-      await eventModel.findByIdAndDelete(
-        req.params.id
-      );
+    const deletedEvent = await eventModel.findByIdAndDelete(req.params.id);
 
     if (!deletedEvent) {
       return res.status(404).json({
@@ -290,10 +257,7 @@ router.delete("/delete/:id", async (req, res) => {
       });
     }
 
-    console.log(
-      "EVENT DELETED:",
-      deletedEvent._id
-    );
+    console.log("EVENT DELETED:", deletedEvent._id);
 
     return res.status(200).json({
       success: true,
