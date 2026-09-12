@@ -1,101 +1,112 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
 
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
-
-// =====================================================
-// ROUTES
-// =====================================================
-
-const adminUserRoutes =
-  require("./src/Router/adminUserRoutes");
-
-const adminLoginRoutes =
-  require("./src/Router/adminLoginRoutes");
-
+const eventRoutes = require("./src/Router/EventRouter");
 
 const app = express();
-
 
 // =====================================================
 // MIDDLEWARE
 // =====================================================
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 
 app.use(express.json());
 
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
+
+// =====================================================
+// STATIC UPLOADS
+// =====================================================
+
+const uploadFolder = path.join(__dirname, "uploads");
+
+console.log("SERVING UPLOADS FROM:", uploadFolder);
+
+app.use(
+  "/uploads",
+  express.static(uploadFolder)
+);
+
+// =====================================================
+// ROOT
+// =====================================================
+
+app.get("/", (req, res) => {
+  res.json({
+    message: "Admin API is working!"
+  });
+});
+
+// =====================================================
+// ROUTES
+// =====================================================
+
+app.use("/events", eventRoutes);
 
 // =====================================================
 // MONGODB
 // =====================================================
 
 mongoose
-  .connect(process.env.MONGO_URI)
-
+  .connect(
+    process.env.MONGO_URI
+  )
   .then(() => {
-
-    console.log(
-      "MongoDB connected"
-    );
-
+    console.log("MongoDB connected");
   })
-
   .catch((error) => {
-
-    console.error(
-      "MongoDB connection error:",
-      error
-    );
-
+    console.log("MongoDB connection error:", error);
   });
 
-
 // =====================================================
-// ADMIN USER ROUTES
+// EXPORT APP FOR VERCEL
 // =====================================================
-
-app.use(
-  "/api/admin",
-  adminUserRoutes
-);
-
-
-// =====================================================
-// ADMIN LOGIN HISTORY
-// =====================================================
-
-app.use(
-  "/api/admin",
-  adminLoginRoutes
-);
-
-
-// =====================================================
-// TEST ROUTE
-// =====================================================
-
-app.get("/", (req, res) => {
-
-  res.send(
-    "Admin Backend Running"
-  );
-
-});
-
-
-// =====================================================
-// SERVER
-// =====================================================
-
-const PORT = 9000;
+const PORT = process.env.PORT || 9000;
 
 app.listen(PORT, () => {
-
-  console.log(
-    `Server running on port ${PORT}`
-  );
-
+  console.log(`Server running on port ${PORT}`);
 });
+module.exports = app;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
