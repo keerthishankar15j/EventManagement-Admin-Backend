@@ -1,8 +1,8 @@
-
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const mongoose = require("mongoose");
+
 require("dotenv").config();
 
 const eventRoutes = require("./src/Router/EventRouter");
@@ -46,12 +46,13 @@ app.use(
 
 app.get("/", (req, res) => {
   res.json({
-    message: "Admin API is working!"
+    success: true,
+    message: "Admin API is working!",
   });
 });
 
 // =====================================================
-// ROUTES
+// EVENT ROUTES
 // =====================================================
 
 app.use("/events", eventRoutes);
@@ -61,9 +62,7 @@ app.use("/events", eventRoutes);
 // =====================================================
 
 mongoose
-  .connect(
-    process.env.MONGO_URI
-  )
+  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
   })
@@ -72,41 +71,7 @@ mongoose
   });
 
 // =====================================================
-// EXPORT APP FOR VERCEL
+// EXPORT FOR VERCEL
 // =====================================================
-const PORT = process.env.PORT || 9000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 module.exports = app;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
