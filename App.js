@@ -33,22 +33,70 @@ app.use(
 
 const uploadFolder = path.join(__dirname, "uploads");
 
-console.log("SERVING UPLOADS FROM:", uploadFolder);
+app.use("/uploads", express.static(uploadFolder));
 
-app.use(
-  "/uploads",
-  express.static(uploadFolder)
-);
+// =====================================================
+// MONGODB CONNECTION
+// =====================================================
+
+let isConnected = false;
+
+const connectDB = async () => {
+  if (isConnected && mongoose.connection.readyState === 1) {
+    return;
+  }
+
+  if (!process.env.MONGO_URI) {
+    throw new Error("MONGO_URI is not defined");
+  }
+
+  await mongoose.connect(process.env.MONGO_URI);
+
+  isConnected = true;
+
+  console.log("MongoDB connected");
+};
 
 // =====================================================
 // ROOT
 // =====================================================
 
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "Admin API is working!",
-  });
+app.get("/", async (req, res) => {
+  try {
+    await connectDB();
+
+    res.status(200).json({
+      success: true,
+      message: "Admin API is working!",
+      database: "Connected",
+    });
+  } catch (error) {
+    console.error("ROOT DB ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// =====================================================
+// DATABASE MIDDLEWARE FOR EVENTS
+// =====================================================
+
+app.use("/events", async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("DATABASE CONNECTION ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+      error: error.message,
+    });
+  }
 });
 
 // =====================================================
@@ -56,19 +104,6 @@ app.get("/", (req, res) => {
 // =====================================================
 
 app.use("/events", eventRoutes);
-
-// =====================================================
-// MONGODB
-// =====================================================
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-  })
-  .catch((error) => {
-    console.log("MongoDB connection error:", error);
-  });
 
 // =====================================================
 // EXPORT FOR VERCEL
