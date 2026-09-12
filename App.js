@@ -108,5 +108,11 @@ app.use("/events", eventRoutes);
 // =====================================================
 // EXPORT FOR VERCEL
 // =====================================================
+app.get("/events/test", (req, res) => {
+  res.json({
+    success: true,
+    message: "EVENT ROUTE WORKING"
+  });
+});
 
 module.exports = app;
