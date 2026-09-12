@@ -90,7 +90,7 @@ app.get("/", (req, res) => {
 // SERVER
 // =====================================================
 
-const PORT = 9001;
+const PORT = 9000;
 
 app.listen(PORT, () => {
 
