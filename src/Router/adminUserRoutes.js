@@ -5,10 +5,27 @@ const router = express.Router();
 const {
   getAllUsers,
   getUserById,
-} = require("../controllers/adminUserController");
+} = require("../Controller/adminUserController");
 
-router.get("/users", getAllUsers);
 
-router.get("/users/:id", getUserById);
+// =====================================================
+// GET ALL USERS
+// =====================================================
+
+router.get(
+  "/users",
+  getAllUsers
+);
+
+
+// =====================================================
+// GET SINGLE USER
+// =====================================================
+
+router.get(
+  "/users/:id",
+  getUserById
+);
+
 
 module.exports = router;

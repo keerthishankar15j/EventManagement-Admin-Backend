@@ -1,14 +1,20 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+
 require("dotenv").config();
 
-const adminUserRoutes = require("./routes/adminUserRoutes");
+const adminLoginRoutes = require("./routes/adminLoginRoutes");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+
+/* ================================
+   MONGODB
+================================ */
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -16,16 +22,34 @@ mongoose
     console.log("MongoDB Connected");
   })
   .catch((error) => {
-    console.log("MongoDB Error:", error);
+    console.error("MongoDB Error:", error);
   });
 
-app.use("/api/admin", adminUserRoutes);
+
+/* ================================
+   ADMIN LOGIN HISTORY ROUTE
+================================ */
+
+app.use(
+  "/api/admin",
+  adminLoginRoutes
+);
+
+
+/* ================================
+   TEST ROUTE
+================================ */
 
 app.get("/", (req, res) => {
   res.send("Admin Backend Running");
 });
 
-const PORT = process.env.PORT || 9001;
+
+/* ================================
+   SERVER
+================================ */
+
+const PORT = 9001;
 
 app.listen(PORT, () => {
   console.log(`Admin Server running on port ${PORT}`);
