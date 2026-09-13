@@ -5,8 +5,7 @@ const app = express();
 
 const userRoutes = require("./src/Router/UserRouter");
 const eventRoutes = require("./src/Router/EventRouter");
-const loginHistoryRoutes =
-  require("./src/Router/LoginHistoryRoute");
+const loginHistoryRoutes = require("./src/Router/LoginHistoryRoute");
 
 
 // ===============================
