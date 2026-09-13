@@ -1,12 +1,22 @@
 const express = require("express");
 
-const {
-  getLoginHistory,
-} = require("../Controller/LoginHistoryController");
-
 const router = express.Router();
 
+const {
+  getLoginHistory,
+  logoutUser,
+} = require("../controller/LoginHistoryController");
+
 // GET LOGIN HISTORY
-router.get("/gethistory", getLoginHistory);
+router.get(
+  "/gethistory",
+  getLoginHistory
+);
+
+// LOGOUT
+router.post(
+  "/logout",
+  logoutUser
+);
 
 module.exports = router;

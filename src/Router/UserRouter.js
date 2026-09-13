@@ -3,36 +3,27 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  getAndSyncUsers,
+  loginuser,
   getUsers,
-  loginUser,
-} = require("../Controller/UserController");
+  getIndividualUser,
+} = require("../controller/LoginController");
 
-// =====================================================
-// GET USERS FROM USER API + SYNC
-// =====================================================
-
-router.get(
-  "/sync",
-  getAndSyncUsers
+// LOGIN
+router.post(
+  "/loginuser",
+  loginuser
 );
 
-// =====================================================
-// GET USERS
-// =====================================================
-
+// GET ALL USERS
 router.get(
   "/getusers",
   getUsers
 );
 
-// =====================================================
-// LOGIN
-// =====================================================
-
-router.post(
-  "/login",
-  loginUser
+// GET SINGLE USER
+router.get(
+  "/getuser/:id",
+  getIndividualUser
 );
 
 module.exports = router;
