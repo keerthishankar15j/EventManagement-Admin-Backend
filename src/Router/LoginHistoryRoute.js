@@ -1,10 +1,10 @@
 const express = require("express");
 
-const router = express.Router();
-
 const {
   getLoginHistory,
 } = require("../Controller/LoginHistoryController");
+
+const router = express.Router();
 
 // GET LOGIN HISTORY
 router.get("/gethistory", getLoginHistory);
