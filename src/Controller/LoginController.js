@@ -1,53 +1,115 @@
-const {
-  loginUserdata,
-  getUsersData,
-  getIndividualUserData,
-} = require("../Server/LoginServer");
+const User = require("../Model/UserModel");
+const connectDB = require("../database/config");
 
-// Login user
+// =====================================================
+// LOGIN USER
+// =====================================================
+
 const loginuser = async (req, res) => {
   try {
-    const result = await loginUserdata(req.body);
+    await connectDB();
 
-    return res.status(200).json(result);
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    if (user.password && user.password !== password) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      user,
+    });
   } catch (error) {
-    console.error("Login Controller Error:", error);
+    console.error("LOGIN USER ERROR:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Login failed",
+      message: "Login failed",
+      error: error.message,
     });
   }
 };
 
-// Get all users
+// =====================================================
+// GET ALL USERS
+// =====================================================
+
 const getUsers = async (req, res) => {
   try {
-    const result = await getUsersData();
+    await connectDB();
 
-    return res.status(200).json(result);
+    const users = await User.find()
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "Users fetched successfully",
+      count: users.length,
+      users,
+    });
   } catch (error) {
-    console.error("Get Users Controller Error:", error);
+    console.error("GET USERS ERROR:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to get users",
+      message: "Failed to get users",
+      error: error.message,
     });
   }
 };
 
-// Get individual user
+// =====================================================
+// GET INDIVIDUAL USER
+// =====================================================
+
 const getIndividualUser = async (req, res) => {
   try {
-    const result = await getIndividualUserData(req.params.id);
+    await connectDB();
 
-    return res.status(200).json(result);
+    const { id } = req.params;
+
+    const user = await User.findById(id).lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User fetched successfully",
+      user,
+    });
   } catch (error) {
-    console.error("Get Individual User Controller Error:", error);
+    console.error("GET INDIVIDUAL USER ERROR:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to get user",
+      message: "Failed to get user",
+      error: error.message,
     });
   }
 };

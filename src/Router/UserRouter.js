@@ -8,13 +8,22 @@ const {
   getIndividualUser,
 } = require("../Controller/LoginController");
 
-// Login user
+// =====================================================
+// LOGIN USER
+// =====================================================
+
 router.post("/loginuser", loginuser);
 
-// Get all users
+// =====================================================
+// GET ALL USERS
+// =====================================================
+
 router.get("/getusers", getUsers);
 
-// Get individual user
+// =====================================================
+// GET INDIVIDUAL USER
+// =====================================================
+
 router.get("/getuser/:id", getIndividualUser);
 
 module.exports = router;
