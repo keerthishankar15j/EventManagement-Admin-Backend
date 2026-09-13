@@ -18,7 +18,12 @@ app.use(
     origin: "*",
   })
 );
+const adminUserRoute = require("./routes/AdminUserRoute");
 
+app.use(
+  "/adminusers",
+  adminUserRoute
+);
 app.use(express.json());
 
 app.use(
