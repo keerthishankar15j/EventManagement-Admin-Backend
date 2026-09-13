@@ -1,24 +1,20 @@
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
+
+require("dotenv").config();
+
+const eventRoutes = require("./src/Router/EventRouter");
 
 const app = express();
 
 // =====================================================
-// ROUTES
-// =====================================================
-
-const userRoutes = require("./src/Router/UserRouter");
-const eventRoutes = require("./src/Router/EventRouter");
-const loginHistoryRoutes = require("./src/Router/LoginHistoryRoute");
-
-// =====================================================
-// CORS CONFIGURATION
+// MIDDLEWARE
 // =====================================================
 
 app.use(
   cors({
-    origin: "https://event-admin-one.vercel.app",
-
+    origin: "*",
     methods: [
       "GET",
       "POST",
@@ -27,22 +23,14 @@ app.use(
       "DELETE",
       "OPTIONS",
     ],
-
     allowedHeaders: [
       "Content-Type",
       "Authorization",
     ],
-
-    credentials: true,
   })
 );
 
-// =====================================================
-// BODY PARSER
-// =====================================================
-
 app.use(express.json());
-
 app.use(
   express.urlencoded({
     extended: true,
@@ -50,45 +38,151 @@ app.use(
 );
 
 // =====================================================
-// API ROUTES
+// MONGODB CONNECTION
 // =====================================================
 
-app.use("/login", userRoutes);
+const connectDB = async () => {
+  try {
+    // Already connected
+    if (mongoose.connection.readyState === 1) {
+      return;
+    }
 
-app.use("/events", eventRoutes);
+    // Connection is currently being established
+    if (mongoose.connection.readyState === 2) {
+      return;
+    }
+
+    if (!process.env.MONGO_URI) {
+      throw new Error(
+        "MONGO_URI is not defined"
+      );
+    }
+
+    await mongoose.connect(
+      process.env.MONGO_URI
+    );
+
+    console.log(
+      "MongoDB connected successfully"
+    );
+  } catch (error) {
+    console.error(
+      "MongoDB CONNECTION ERROR:",
+      error
+    );
+
+    throw error;
+  }
+};
+
+// =====================================================
+// TEST ROUTE
+// =====================================================
+
+app.get("/", async (req, res) => {
+  try {
+    await connectDB();
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin API is working!",
+      database: "Connected",
+    });
+  } catch (error) {
+    console.error(
+      "ROOT DATABASE ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Database connection failed",
+      error: error.message,
+    });
+  }
+});
+
+// =====================================================
+// EVENT ROUTES
+// =====================================================
 
 app.use(
-  "/loginhistory",
-  loginHistoryRoutes
+  "/events",
+  async (req, res, next) => {
+    try {
+      await connectDB();
+      next();
+    } catch (error) {
+      console.error(
+        "EVENT DATABASE ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Database connection failed",
+        error: error.message,
+      });
+    }
+  },
+  eventRoutes
 );
 
 // =====================================================
-// ROOT API
+// 404
 // =====================================================
 
-app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Event Management API is running",
-  });
-});
-
-// =====================================================
-// ERROR HANDLER
-// =====================================================
-
-app.use((err, req, res, next) => {
-  console.error("GLOBAL ERROR:", err);
-
-  res.status(500).json({
+app.use((req, res) => {
+  return res.status(404).json({
     success: false,
-    message: "Internal server error",
-    error: err.message,
+    message: "Route not found",
+    path: req.originalUrl,
   });
 });
 
 // =====================================================
-// EXPORT APP
+// GLOBAL ERROR
+// =====================================================
+
+app.use(
+  (err, req, res, next) => {
+    console.error(
+      "GLOBAL ERROR:",
+      err
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        err.message ||
+        "Internal server error",
+    });
+  }
+);
+
+// =====================================================
+// LOCAL SERVER
+// =====================================================
+
+if (
+  process.env.NODE_ENV !==
+  "production"
+) {
+  const PORT =
+    process.env.PORT || 9000;
+
+  app.listen(PORT, () => {
+    console.log(
+      `Server running on port ${PORT}`
+    );
+  });
+}
+
+// =====================================================
+// VERCEL EXPORT
 // =====================================================
 
 module.exports = app;

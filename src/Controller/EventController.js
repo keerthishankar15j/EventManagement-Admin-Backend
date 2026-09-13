@@ -9,18 +9,12 @@ const createEvent = async (req, res) => {
     console.log("=================================");
     console.log("CREATE EVENT");
     console.log("BODY:", req.body);
-    console.log("FILE:", req.file);
+    console.log(
+      "FILE:",
+      req.file ? req.file.originalname : "NO FILE"
+    );
     console.log("=================================");
 
-    // Check image
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "Event image is required",
-      });
-    }
-
-    // Check required fields
     const {
       name,
       organizer,
@@ -28,9 +22,14 @@ const createEvent = async (req, res) => {
       time,
       location,
       description,
+      category,
       tickets,
-      status,
+      ticketPrice,
     } = req.body;
+
+    // =================================================
+    // VALIDATION
+    // =================================================
 
     if (
       !name ||
@@ -39,8 +38,10 @@ const createEvent = async (req, res) => {
       !time ||
       !location ||
       !description ||
+      !category ||
       tickets === undefined ||
-      !status
+      ticketPrice === undefined ||
+      !req.file
     ) {
       return res.status(400).json({
         success: false,
@@ -48,30 +49,68 @@ const createEvent = async (req, res) => {
       });
     }
 
-    // Convert image to Base64
-    const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString(
-      "base64"
-    )}`;
+    // =================================================
+    // NUMBER VALIDATION
+    // =================================================
 
-    // Create event
+    const ticketNumber = Number(tickets);
+    const priceNumber = Number(ticketPrice);
+
+    if (
+      Number.isNaN(ticketNumber) ||
+      ticketNumber < 1
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Tickets must be at least 1",
+      });
+    }
+
+    if (
+      Number.isNaN(priceNumber) ||
+      priceNumber < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Ticket price must be 0 or greater",
+      });
+    }
+
+    // =================================================
+    // IMAGE → BASE64
+    // =================================================
+
+    const imageBase64 =
+      `data:${req.file.mimetype};base64,` +
+      req.file.buffer.toString("base64");
+
+    // =================================================
+    // CREATE EVENT
+    // =================================================
+
     const newEvent = new eventModel({
-      name: name,
-      organizer: organizer,
-      date: date,
-      time: time,
-      location: location,
-      description: description,
-      tickets: Number(tickets),
-      status: status,
-
-      // Save image directly inside MongoDB
-      image: imageData,
+      name: name.trim(),
+      organizer: organizer.trim(),
+      date,
+      time,
+      location: location.trim(),
+      description: description.trim(),
+      category,
+      tickets: ticketNumber,
+      ticketPrice: priceNumber,
+      image: imageBase64,
     });
 
-    // Save to MongoDB
+    // =================================================
+    // SAVE
+    // =================================================
+
     const savedEvent = await newEvent.save();
 
-    console.log("EVENT SAVED:", savedEvent);
+    console.log(
+      "EVENT SAVED:",
+      savedEvent._id.toString()
+    );
 
     return res.status(201).json({
       success: true,
@@ -79,7 +118,10 @@ const createEvent = async (req, res) => {
       data: savedEvent,
     });
   } catch (error) {
-    console.error("CREATE EVENT ERROR:", error);
+    console.error(
+      "CREATE EVENT ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -95,19 +137,29 @@ const createEvent = async (req, res) => {
 
 const getEvents = async (req, res) => {
   try {
+    console.log("GET EVENTS REQUEST");
+
     const events = await eventModel
-      .find()
-      .sort({
-        createdAt: -1,
-      });
+      .find({})
+      .sort({ createdAt: -1 })
+      .lean();
+
+    console.log(
+      "EVENT COUNT:",
+      events.length
+    );
 
     return res.status(200).json({
       success: true,
       message: "Events fetched successfully",
+      count: events.length,
       data: events,
     });
   } catch (error) {
-    console.error("GET EVENTS ERROR:", error);
+    console.error(
+      "GET EVENTS ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -125,7 +177,13 @@ const getSingleEvent = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const event = await eventModel.findById(id);
+    console.log(
+      "GET SINGLE EVENT:",
+      id
+    );
+
+    const event =
+      await eventModel.findById(id).lean();
 
     if (!event) {
       return res.status(404).json({
@@ -140,7 +198,10 @@ const getSingleEvent = async (req, res) => {
       data: event,
     });
   } catch (error) {
-    console.error("GET SINGLE EVENT ERROR:", error);
+    console.error(
+      "GET SINGLE EVENT ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -162,10 +223,14 @@ const updateEvent = async (req, res) => {
     console.log("UPDATE EVENT");
     console.log("ID:", id);
     console.log("BODY:", req.body);
-    console.log("FILE:", req.file);
+    console.log(
+      "FILE:",
+      req.file ? req.file.originalname : "NO FILE"
+    );
     console.log("=================================");
 
-    const existingEvent = await eventModel.findById(id);
+    const existingEvent =
+      await eventModel.findById(id);
 
     if (!existingEvent) {
       return res.status(404).json({
@@ -174,52 +239,104 @@ const updateEvent = async (req, res) => {
       });
     }
 
-    // Update text fields
+    // =================================================
+    // UPDATE TEXT FIELDS ONLY IF PROVIDED
+    // =================================================
+
     if (req.body.name !== undefined) {
-      existingEvent.name = req.body.name;
+      existingEvent.name =
+        req.body.name.trim();
     }
 
     if (req.body.organizer !== undefined) {
-      existingEvent.organizer = req.body.organizer;
+      existingEvent.organizer =
+        req.body.organizer.trim();
     }
 
     if (req.body.date !== undefined) {
-      existingEvent.date = req.body.date;
+      existingEvent.date =
+        req.body.date;
     }
 
     if (req.body.time !== undefined) {
-      existingEvent.time = req.body.time;
+      existingEvent.time =
+        req.body.time;
     }
 
     if (req.body.location !== undefined) {
-      existingEvent.location = req.body.location;
+      existingEvent.location =
+        req.body.location.trim();
     }
 
     if (req.body.description !== undefined) {
-      existingEvent.description = req.body.description;
+      existingEvent.description =
+        req.body.description.trim();
+    }
+
+    if (req.body.category !== undefined) {
+      existingEvent.category =
+        req.body.category;
     }
 
     if (req.body.tickets !== undefined) {
-      existingEvent.tickets = Number(req.body.tickets);
+      const ticketNumber =
+        Number(req.body.tickets);
+
+      if (
+        Number.isNaN(ticketNumber) ||
+        ticketNumber < 1
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Tickets must be at least 1",
+        });
+      }
+
+      existingEvent.tickets =
+        ticketNumber;
     }
 
-    if (req.body.status !== undefined) {
-      existingEvent.status = req.body.status;
+    if (req.body.ticketPrice !== undefined) {
+      const priceNumber =
+        Number(req.body.ticketPrice);
+
+      if (
+        Number.isNaN(priceNumber) ||
+        priceNumber < 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Ticket price must be 0 or greater",
+        });
+      }
+
+      existingEvent.ticketPrice =
+        priceNumber;
     }
 
-    // Update image only when a new image is uploaded
+    // =================================================
+    // UPDATE IMAGE ONLY IF NEW IMAGE EXISTS
+    // =================================================
+
     if (req.file) {
-      const imageData = `data:${
-        req.file.mimetype
-      };base64,${req.file.buffer.toString("base64")}`;
-
-      existingEvent.image = imageData;
+      existingEvent.image =
+        `data:${req.file.mimetype};base64,` +
+        req.file.buffer.toString("base64");
     }
 
-    // Save updated event
-    const updatedEvent = await existingEvent.save();
+    // =================================================
+    // SAVE
+    // =================================================
 
-    console.log("UPDATED EVENT:", updatedEvent);
+    const updatedEvent =
+      await existingEvent.save();
+
+    console.log(
+      "EVENT UPDATED:",
+      updatedEvent._id.toString()
+    );
 
     return res.status(200).json({
       success: true,
@@ -227,7 +344,10 @@ const updateEvent = async (req, res) => {
       data: updatedEvent,
     });
   } catch (error) {
-    console.error("UPDATE EVENT ERROR:", error);
+    console.error(
+      "UPDATE EVENT ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -245,6 +365,11 @@ const deleteEvent = async (req, res) => {
   try {
     const { id } = req.params;
 
+    console.log(
+      "DELETE EVENT:",
+      id
+    );
+
     const deletedEvent =
       await eventModel.findByIdAndDelete(id);
 
@@ -261,7 +386,10 @@ const deleteEvent = async (req, res) => {
       data: deletedEvent,
     });
   } catch (error) {
-    console.error("DELETE EVENT ERROR:", error);
+    console.error(
+      "DELETE EVENT ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
