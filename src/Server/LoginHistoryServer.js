@@ -1,5 +1,5 @@
 const LoginHistoryModel = require(
-  "../model/LoginHistoryModel"
+  "../Model/LoginHistoryModel"
 );
 
 // =====================================================

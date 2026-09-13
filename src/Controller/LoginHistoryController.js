@@ -1,7 +1,7 @@
 const {
   getLoginHistoryData,
   logoutUserData,
-} = require("../server/LoginHistoryServer");
+} = require("../Server/LoginHistoryServer");
 
 // =====================================================
 // GET ALL LOGIN HISTORY
