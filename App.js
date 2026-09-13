@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -57,9 +56,7 @@ const connectDB = async () => {
     throw new Error("MONGO_URI is not defined");
   }
 
-  await mongoose.connect(
-    process.env.MONGO_URI
-  );
+  await mongoose.connect(process.env.MONGO_URI);
 
   isConnected = true;
 
@@ -79,13 +76,8 @@ app.get("/", async (req, res) => {
       message: "Admin API is working!",
       database: "Connected",
     });
-
   } catch (error) {
-
-    console.error(
-      "ROOT DB ERROR:",
-      error
-    );
+    console.error("ROOT DB ERROR:", error);
 
     res.status(500).json({
       success: false,
@@ -95,21 +87,16 @@ app.get("/", async (req, res) => {
 });
 
 // =====================================================
-// DATABASE MIDDLEWARE FOR EVENTS
+// EVENT DATABASE MIDDLEWARE
 // =====================================================
 
 app.use(
   "/events",
   async (req, res, next) => {
-
     try {
-
       await connectDB();
-
       next();
-
     } catch (error) {
-
       console.error(
         "DATABASE CONNECTION ERROR:",
         error
@@ -140,12 +127,10 @@ app.use(
 app.get(
   "/events/test",
   (req, res) => {
-
     res.json({
       success: true,
       message: "EVENT ROUTE WORKING",
     });
-
   }
 );
 
@@ -155,13 +140,11 @@ app.get(
 
 app.use(
   (req, res) => {
-
     res.status(404).json({
       success: false,
       message: "API route not found",
       path: req.originalUrl,
     });
-
   }
 );
 
