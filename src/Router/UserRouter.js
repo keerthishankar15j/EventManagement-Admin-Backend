@@ -6,7 +6,9 @@ const {
   loginuser,
   getUsers,
   getIndividualUser,
-} = require("../controller/LoginController");
+} = require(
+  "../Controller/LoginController"
+);
 
 // LOGIN
 router.post(

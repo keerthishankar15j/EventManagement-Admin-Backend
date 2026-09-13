@@ -1,13 +1,18 @@
 const {
   getLoginHistoryData,
   logoutUserData,
-} = require("../Server/LoginHistoryServer");
+} = require(
+  "../Server/LoginHistoryServer"
+);
 
 // =====================================================
-// GET ALL LOGIN HISTORY
+// GET LOGIN HISTORY
 // =====================================================
 
-const getLoginHistory = async (req, res) => {
+const getLoginHistory = async (
+  req,
+  res
+) => {
   try {
     const result =
       await getLoginHistoryData();
@@ -32,17 +37,21 @@ const getLoginHistory = async (req, res) => {
 };
 
 // =====================================================
-// LOGOUT USER
+// LOGOUT
 // =====================================================
 
-const logoutUser = async (req, res) => {
+const logoutUser = async (
+  req,
+  res
+) => {
   try {
     const { userId } = req.body;
 
     if (!userId) {
       return res.status(400).json({
         success: false,
-        message: "userId is required",
+        message:
+          "userId is required",
       });
     }
 

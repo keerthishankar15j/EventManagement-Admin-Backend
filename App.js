@@ -9,17 +9,17 @@ require("dotenv").config();
 // ROUTES
 // =====================================================
 
-const userRoutes = require("./src/Router/UserRouter");
+const userRoutes = require(
+  "./src/Router/UserRouter"
+);
 
-const eventRoutes = require("./src/Router/EventRouter");
+const eventRoutes = require(
+  "./src/Router/EventRouter"
+);
 
 const loginHistoryRoutes = require(
   "./src/Router/LoginHistoryRoute"
 );
-
-// =====================================================
-// APP
-// =====================================================
 
 const app = express();
 
@@ -34,22 +34,36 @@ const allowedOrigins = [
 ];
 
 const corsOptions = {
-  origin: function (origin, callback) {
-
-    // Allow Postman / direct server requests
+  origin: function (
+    origin,
+    callback
+  ) {
+    // Allow Postman / server requests
     if (!origin) {
-      return callback(null, true);
+      return callback(
+        null,
+        true
+      );
     }
 
-    // Allow approved frontend URLs
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+    if (
+      allowedOrigins.includes(origin)
+    ) {
+      return callback(
+        null,
+        true
+      );
     }
 
-    console.log("Blocked CORS origin:", origin);
+    console.log(
+      "CORS blocked:",
+      origin
+    );
 
     return callback(
-      new Error("Not allowed by CORS")
+      new Error(
+        "Not allowed by CORS"
+      )
     );
   },
 
@@ -70,13 +84,17 @@ const corsOptions = {
   credentials: true,
 };
 
-app.use(cors(corsOptions));
+app.use(
+  cors(corsOptions)
+);
 
 // =====================================================
 // BODY PARSER
 // =====================================================
 
-app.use(express.json());
+app.use(
+  express.json()
+);
 
 app.use(
   express.urlencoded({
@@ -88,112 +106,115 @@ app.use(
 // UPLOADS
 // =====================================================
 
-const uploadFolder = path.join(
-  __dirname,
-  "uploads"
-);
+const uploadFolder =
+  path.join(
+    __dirname,
+    "uploads"
+  );
 
 app.use(
   "/uploads",
-  express.static(uploadFolder)
+  express.static(
+    uploadFolder
+  )
 );
 
 // =====================================================
-// MONGODB CONNECTION
+// DATABASE
 // =====================================================
 
 let isConnected = false;
 
 const connectDB = async () => {
 
-  try {
-
-    // Already connected
-    if (
-      isConnected &&
-      mongoose.connection.readyState === 1
-    ) {
-      return;
-    }
-
-    // Check MONGO_URI
-    if (!process.env.MONGO_URI) {
-
-      throw new Error(
-        "MONGO_URI is not defined"
-      );
-
-    }
-
-    await mongoose.connect(
-      process.env.MONGO_URI
-    );
-
-    isConnected = true;
-
-    console.log(
-      "MongoDB connected successfully"
-    );
-
-  } catch (error) {
-
-    isConnected = false;
-
-    console.error(
-      "MongoDB connection error:",
-      error.message
-    );
-
-    throw error;
+  if (
+    isConnected &&
+    mongoose.connection
+      .readyState === 1
+  ) {
+    return;
   }
+
+  if (
+    !process.env.MONGO_URI
+  ) {
+    throw new Error(
+      "MONGO_URI is not defined"
+    );
+  }
+
+  await mongoose.connect(
+    process.env.MONGO_URI
+  );
+
+  isConnected = true;
+
+  console.log(
+    "MongoDB connected successfully"
+  );
 };
 
 // =====================================================
 // DATABASE MIDDLEWARE
 // =====================================================
 
-app.use(async (req, res, next) => {
+app.use(
+  async (
+    req,
+    res,
+    next
+  ) => {
 
-  try {
+    try {
 
-    await connectDB();
+      await connectDB();
 
-    next();
+      next();
 
-  } catch (error) {
+    } catch (error) {
 
-    console.error(
-      "DATABASE ERROR:",
-      error.message
-    );
+      console.error(
+        "DATABASE ERROR:",
+        error.message
+      );
 
-    return res.status(500).json({
-      success: false,
-      message: "Database connection failed",
-      error: error.message,
-    });
+      return res.status(500).json({
+        success: false,
+        message:
+          "Database connection failed",
+        error:
+          error.message,
+      });
+
+    }
+
   }
-});
+);
 
 // =====================================================
-// ROOT API
+// ROOT
 // =====================================================
 
-app.get("/", (req, res) => {
+app.get(
+  "/",
+  (req, res) => {
 
-  return res.status(200).json({
-    success: true,
-    message: "User API is working!",
-    database:
-      mongoose.connection.readyState === 1
-        ? "Connected"
-        : "Disconnected",
-  });
+    return res.status(200).json({
+      success: true,
+      message:
+        "User API is working!",
+      database:
+        mongoose.connection
+          .readyState === 1
+          ? "Connected"
+          : "Disconnected",
+    });
 
-});
+  }
+);
 
 // =====================================================
-// LOGIN / USER ROUTES
+// LOGIN / USERS
 // =====================================================
 
 app.use(
@@ -202,7 +223,7 @@ app.use(
 );
 
 // =====================================================
-// LOGIN HISTORY ROUTES
+// LOGIN HISTORY
 // =====================================================
 
 app.use(
@@ -211,7 +232,7 @@ app.use(
 );
 
 // =====================================================
-// EVENT ROUTES
+// EVENTS
 // =====================================================
 
 app.use(
@@ -223,22 +244,31 @@ app.use(
 // 404
 // =====================================================
 
-app.use((req, res) => {
+app.use(
+  (req, res) => {
 
-  return res.status(404).json({
-    success: false,
-    message: "API route not found",
-    path: req.originalUrl,
-  });
+    return res.status(404).json({
+      success: false,
+      message:
+        "API route not found",
+      path:
+        req.originalUrl,
+    });
 
-});
+  }
+);
 
 // =====================================================
-// GLOBAL ERROR HANDLER
+// ERROR HANDLER
 // =====================================================
 
 app.use(
-  (err, req, res, next) => {
+  (
+    err,
+    req,
+    res,
+    next
+  ) => {
 
     console.error(
       "UNHANDLED SERVER ERROR:",

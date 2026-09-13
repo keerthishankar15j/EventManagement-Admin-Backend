@@ -3,7 +3,7 @@ const LoginHistoryModel = require(
 );
 
 // =====================================================
-// GET ALL LOGIN HISTORY
+// GET LOGIN HISTORY
 // =====================================================
 
 const getLoginHistoryData = async () => {
@@ -24,7 +24,7 @@ const getLoginHistoryData = async () => {
 
   } catch (error) {
     console.error(
-      "GET LOGIN HISTORY SERVICE ERROR:",
+      "LOGIN HISTORY SERVICE ERROR:",
       error
     );
 
@@ -39,15 +39,19 @@ const getLoginHistoryData = async () => {
 // LOGOUT USER
 // =====================================================
 
-const logoutUserData = async (userId) => {
+const logoutUserData = async (
+  userId
+) => {
   try {
     const loginHistory =
-      await LoginHistoryModel.findOne({
-        userId: userId,
-        status: "Active",
-      }).sort({
-        loginTime: -1,
-      });
+      await LoginHistoryModel
+        .findOne({
+          userId: userId,
+          status: "Active",
+        })
+        .sort({
+          loginTime: -1,
+        });
 
     if (!loginHistory) {
       return {
