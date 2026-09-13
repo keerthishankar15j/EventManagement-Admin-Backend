@@ -4,7 +4,6 @@ const path = require("path");
 const mongoose = require("mongoose");
 
 require("dotenv").config();
-
 const userRoutes = require("./src/Router/UserRouter");
 const eventRoutes = require("./src/Router/EventRouter");
 
