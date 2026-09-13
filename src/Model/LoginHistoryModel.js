@@ -1,53 +1,77 @@
-const mongoose = require(
-  "mongoose"
-);
+const mongoose = require("mongoose");
 
-const LoginHistorySchema =
-  new mongoose.Schema(
-    {
-      userId: {
-        type:
-          mongoose.Schema.Types.ObjectId,
-        ref: "Signup",
-        required: true,
-      },
 
-      name: {
-        type: String,
-        required: true,
-      },
+const LoginHistorySchema = new mongoose.Schema(
 
-      email: {
-        type: String,
-        required: true,
-      },
+  {
+    userId: {
 
-      loginTime: {
-        type: Date,
-        required: true,
-      },
+      type: mongoose.Schema.Types.ObjectId,
 
-      logoutTime: {
-        type: Date,
-        default: null,
-      },
+      ref: "Signup",
 
-      status: {
-        type: String,
+      required: true,
 
-        enum: [
-          "Active",
-          "Logged Out",
-        ],
-
-        default: "Active",
-      },
     },
 
-    {
-      timestamps: true,
-    }
-  );
+
+    name: {
+
+      type: String,
+
+      required: true,
+
+    },
+
+
+    email: {
+
+      type: String,
+
+      required: true,
+
+    },
+
+
+    loginTime: {
+
+      type: Date,
+
+      required: true,
+
+    },
+
+
+    logoutTime: {
+
+      type: Date,
+
+      default: null,
+
+    },
+
+
+    status: {
+
+      type: String,
+
+      enum: [
+        "Active",
+        "Logged Out",
+      ],
+
+      default: "Active",
+
+    },
+
+  },
+
+  {
+    timestamps: true,
+  }
+
+);
+
 
 module.exports =
   mongoose.model(

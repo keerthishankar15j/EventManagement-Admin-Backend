@@ -4,6 +4,11 @@ const {
   getIndividualUserData,
 } = require("../Server/LoginServer");
 
+
+// =====================================================
+// LOGIN USER
+// =====================================================
+
 const loginuser = async (req, res) => {
   try {
     const result = await loginUserdata(req.body);
@@ -15,7 +20,7 @@ const loginuser = async (req, res) => {
     return res.status(400).json(result);
 
   } catch (error) {
-    console.error("LOGIN ERROR:", error);
+    console.error("LOGIN CONTROLLER ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -23,6 +28,11 @@ const loginuser = async (req, res) => {
     });
   }
 };
+
+
+// =====================================================
+// GET ALL USERS
+// =====================================================
 
 const getUsers = async (req, res) => {
   try {
@@ -35,7 +45,7 @@ const getUsers = async (req, res) => {
     return res.status(400).json(result);
 
   } catch (error) {
-    console.error("GET USERS ERROR:", error);
+    console.error("GET USERS CONTROLLER ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -44,12 +54,16 @@ const getUsers = async (req, res) => {
   }
 };
 
+
+// =====================================================
+// GET INDIVIDUAL USER
+// =====================================================
+
 const getIndividualUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result =
-      await getIndividualUserData(id);
+    const result = await getIndividualUserData(id);
 
     if (result.success) {
       return res.status(200).json(result);
@@ -59,7 +73,7 @@ const getIndividualUser = async (req, res) => {
 
   } catch (error) {
     console.error(
-      "GET INDIVIDUAL USER ERROR:",
+      "GET INDIVIDUAL USER CONTROLLER ERROR:",
       error
     );
 
@@ -69,6 +83,7 @@ const getIndividualUser = async (req, res) => {
     });
   }
 };
+
 
 module.exports = {
   loginuser,
