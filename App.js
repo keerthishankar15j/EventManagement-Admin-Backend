@@ -5,22 +5,26 @@ const mongoose = require("mongoose");
 
 require("dotenv").config();
 
-const eventRoutes = require("./src/Router/EventRouter");
 const userRoutes = require("./src/Router/UserRoute");
+const eventRoutes = require("./src/Router/EventRouter");
 
 const app = express();
 
 // =====================================================
-// MIDDLEWARE
+// CORS
 // =====================================================
 
 app.use(
   cors({
     origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// =====================================================
+// BODY PARSER
+// =====================================================
 
 app.use(express.json());
 
@@ -31,12 +35,15 @@ app.use(
 );
 
 // =====================================================
-// STATIC UPLOADS
+// STATIC FILES
 // =====================================================
 
 const uploadFolder = path.join(__dirname, "uploads");
 
-app.use("/uploads", express.static(uploadFolder));
+app.use(
+  "/uploads",
+  express.static(uploadFolder)
+);
 
 // =====================================================
 // MONGODB
@@ -72,7 +79,10 @@ app.use(async (req, res, next) => {
     await connectDB();
     next();
   } catch (error) {
-    console.error("DATABASE CONNECTION ERROR:", error);
+    console.error(
+      "DATABASE CONNECTION ERROR:",
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -101,7 +111,22 @@ app.get("/", (req, res) => {
 // USER ROUTES
 // =====================================================
 
-app.use("/users", userRoutes);
+app.use("/login", userRoutes);
+
+// =====================================================
+// LOGIN HISTORY
+// =====================================================
+
+// If you have LoginHistoryRoute.js, uncomment:
+//
+// const loginHistoryRoutes = require(
+//   "./src/Router/LoginHistoryRoute"
+// );
+//
+// app.use(
+//   "/loginhistory",
+//   loginHistoryRoutes
+// );
 
 // =====================================================
 // EVENT ROUTES
@@ -126,7 +151,10 @@ app.use((req, res) => {
 // =====================================================
 
 app.use((err, req, res, next) => {
-  console.error("SERVER ERROR:", err);
+  console.error(
+    "UNHANDLED SERVER ERROR:",
+    err
+  );
 
   res.status(500).json({
     success: false,
@@ -136,7 +164,7 @@ app.use((err, req, res, next) => {
 });
 
 // =====================================================
-// VERCEL
+// VERCEL EXPORT
 // =====================================================
 
 module.exports = app;
