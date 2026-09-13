@@ -14,7 +14,7 @@ const {
 router.get("/gethistory", getLoginHistory);
 
 // =====================================================
-// LOGOUT
+// LOGOUT USER
 // =====================================================
 
 router.post("/logout", logoutUser);

@@ -1,5 +1,7 @@
-const LoginHistory = require("../Model/LoginHistoryModel");
-const connectDB = require("../database/config");
+const {
+  getLoginHistoryData,
+  logoutUserData,
+} = require("../Server/LoginHistoryServer");
 
 // =====================================================
 // GET LOGIN HISTORY
@@ -7,17 +9,13 @@ const connectDB = require("../database/config");
 
 const getLoginHistory = async (req, res) => {
   try {
-    await connectDB();
+    const result = await getLoginHistoryData();
 
-    const history = await LoginHistory.find()
-      .sort({ loginTime: -1 })
-      .lean();
+    if (result.success) {
+      return res.status(200).json(result);
+    }
 
-    return res.status(200).json({
-      success: true,
-      message: "Login history fetched successfully",
-      history,
-    });
+    return res.status(400).json(result);
   } catch (error) {
     console.error("GET LOGIN HISTORY ERROR:", error);
 
@@ -35,8 +33,6 @@ const getLoginHistory = async (req, res) => {
 
 const logoutUser = async (req, res) => {
   try {
-    await connectDB();
-
     const { userId } = req.body;
 
     if (!userId) {
@@ -46,34 +42,19 @@ const logoutUser = async (req, res) => {
       });
     }
 
-    const activeLogin = await LoginHistory.findOne({
-      userId,
-      status: "Active",
-    }).sort({ loginTime: -1 });
+    const result = await logoutUserData(userId);
 
-    if (!activeLogin) {
-      return res.status(404).json({
-        success: false,
-        message: "Active login session not found",
-      });
+    if (result.success) {
+      return res.status(200).json(result);
     }
 
-    activeLogin.logoutTime = new Date();
-    activeLogin.status = "Logged Out";
-
-    await activeLogin.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "User logged out successfully",
-      data: activeLogin,
-    });
+    return res.status(400).json(result);
   } catch (error) {
     console.error("LOGOUT ERROR:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Logout failed",
+      message: "Failed to logout user",
       error: error.message,
     });
   }

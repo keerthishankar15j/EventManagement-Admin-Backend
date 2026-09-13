@@ -15,58 +15,34 @@ const loginHistoryRoutes = require("./src/Router/LoginHistoryRoute");
 // CORS
 // =====================================================
 
-const corsOptions = {
-  origin: "https://event-admin-one.vercel.app",
-
-  methods: [
-    "GET",
-    "POST",
-    "PUT",
-    "PATCH",
-    "DELETE",
-    "OPTIONS",
-  ],
-
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-  ],
-
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options("*", cors(corsOptions));
-
-// =====================================================
-// BODY PARSER
-// =====================================================
-
-app.use(express.json());
-
 app.use(
-  express.urlencoded({
-    extended: true,
+  cors({
+    origin: "https://event-admin-one.vercel.app",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 
 // =====================================================
-// ROUTES
+// MIDDLEWARE
+// =====================================================
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// =====================================================
+// API ROUTES
 // =====================================================
 
 app.use("/login", userRoutes);
 
 app.use("/events", eventRoutes);
 
-app.use(
-  "/loginhistory",
-  loginHistoryRoutes
-);
+app.use("/loginhistory", loginHistoryRoutes);
 
 // =====================================================
-// TEST API
+// ROOT API
 // =====================================================
 
 app.get("/", (req, res) => {
@@ -77,7 +53,7 @@ app.get("/", (req, res) => {
 });
 
 // =====================================================
-// 404
+// 404 HANDLER
 // =====================================================
 
 app.use((req, res) => {
@@ -89,17 +65,7 @@ app.use((req, res) => {
 });
 
 // =====================================================
-// ERROR HANDLER
+// EXPORT
 // =====================================================
-
-app.use((err, req, res, next) => {
-  console.error("GLOBAL ERROR:", err);
-
-  res.status(500).json({
-    success: false,
-    message: "Internal server error",
-    error: err.message,
-  });
-});
 
 module.exports = app;

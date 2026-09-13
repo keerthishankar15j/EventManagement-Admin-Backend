@@ -21,6 +21,7 @@ const LoginHistorySchema = new mongoose.Schema(
     loginTime: {
       type: Date,
       required: true,
+      default: Date.now,
     },
 
     logoutTime: {
@@ -39,6 +40,7 @@ const LoginHistorySchema = new mongoose.Schema(
   }
 );
 
-module.exports =
-  mongoose.models.LoginHistory ||
-  mongoose.model("LoginHistory", LoginHistorySchema);
+module.exports = mongoose.model(
+  "LoginHistory",
+  LoginHistorySchema
+);
