@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs"); 
 const jwt = require("jsonwebtoken"); 
  
-const SignupModel = require("../Model/Signup Model"); 
+const SignupModel = require("../Model/SignupModel"); 
 const LoginHistoryModel = require("../Model/LoginHistoryModel"); 
  
  
