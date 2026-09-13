@@ -1,5 +1,5 @@
 const axios = require("axios");
-const User = require("../Models/UserModel");
+const User = require("../Model/UserModel");
 const sendWelcomeEmail = require("../Utils/sendEmail");
 
 // =====================================================
