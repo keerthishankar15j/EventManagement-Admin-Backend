@@ -17,7 +17,10 @@ const getLoginHistory = async (req, res) => {
 
     return res.status(400).json(result);
   } catch (error) {
-    console.error("GET LOGIN HISTORY ERROR:", error);
+    console.error(
+      "GET LOGIN HISTORY ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -50,11 +53,14 @@ const logoutUser = async (req, res) => {
 
     return res.status(400).json(result);
   } catch (error) {
-    console.error("LOGOUT ERROR:", error);
+    console.error(
+      "LOGOUT ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Failed to logout user",
+      message: "Logout failed",
       error: error.message,
     });
   }

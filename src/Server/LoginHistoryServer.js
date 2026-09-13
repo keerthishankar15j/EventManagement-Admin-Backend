@@ -7,15 +7,21 @@ const LoginHistory = require("../Model/LoginHistoryModel");
 const getLoginHistoryData = async () => {
   try {
     const history = await LoginHistory.find()
-      .sort({ loginTime: -1 });
+      .sort({
+        loginTime: -1,
+      });
 
     return {
       success: true,
       message: "Login history fetched successfully",
+      count: history.length,
       history,
     };
   } catch (error) {
-    console.error("GET LOGIN HISTORY SERVER ERROR:", error);
+    console.error(
+      "GET LOGIN HISTORY DATA ERROR:",
+      error
+    );
 
     return {
       success: false,
@@ -32,14 +38,16 @@ const getLoginHistoryData = async () => {
 const logoutUserData = async (userId) => {
   try {
     const activeLogin = await LoginHistory.findOne({
-      userId,
+      userId: userId,
       status: "Active",
-    }).sort({ loginTime: -1 });
+    }).sort({
+      loginTime: -1,
+    });
 
     if (!activeLogin) {
       return {
         success: false,
-        message: "Active login session not found",
+        message: "No active login found for this user",
       };
     }
 
@@ -51,10 +59,13 @@ const logoutUserData = async (userId) => {
     return {
       success: true,
       message: "User logged out successfully",
-      history: activeLogin,
+      data: activeLogin,
     };
   } catch (error) {
-    console.error("LOGOUT SERVER ERROR:", error);
+    console.error(
+      "LOGOUT USER DATA ERROR:",
+      error
+    );
 
     return {
       success: false,

@@ -21,7 +21,6 @@ const LoginHistorySchema = new mongoose.Schema(
     loginTime: {
       type: Date,
       required: true,
-      default: Date.now,
     },
 
     logoutTime: {
@@ -31,10 +30,14 @@ const LoginHistorySchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["Active", "Logged Out"],
+      enum: [
+        "Active",
+        "Logged Out",
+      ],
       default: "Active",
     },
   },
+
   {
     timestamps: true,
   }

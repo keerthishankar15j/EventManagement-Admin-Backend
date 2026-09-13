@@ -11,12 +11,18 @@ const {
 // GET LOGIN HISTORY
 // =====================================================
 
-router.get("/gethistory", getLoginHistory);
+router.get(
+  "/gethistory",
+  getLoginHistory
+);
 
 // =====================================================
 // LOGOUT USER
 // =====================================================
 
-router.post("/logout", logoutUser);
+router.post(
+  "/logout",
+  logoutUser
+);
 
 module.exports = router;
