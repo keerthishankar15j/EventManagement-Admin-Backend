@@ -23,16 +23,28 @@ const upload = multer({
   },
 
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed"));
+      cb(
+        new Error(
+          "Only JPG, JPEG, PNG and WEBP images are allowed"
+        )
+      );
     }
   },
 });
 
 // =====================================================
 // CREATE EVENT
+// POST /events/create
 // =====================================================
 
 router.post(
@@ -43,6 +55,7 @@ router.post(
 
 // =====================================================
 // GET ALL EVENTS
+// GET /events/getevents
 // =====================================================
 
 router.get(
@@ -52,6 +65,7 @@ router.get(
 
 // =====================================================
 // GET SINGLE EVENT
+// GET /events/get/:id
 // =====================================================
 
 router.get(
@@ -61,6 +75,7 @@ router.get(
 
 // =====================================================
 // UPDATE EVENT
+// PUT /events/update/:id
 // =====================================================
 
 router.put(
@@ -71,11 +86,16 @@ router.put(
 
 // =====================================================
 // DELETE EVENT
+// DELETE /events/delete/:id
 // =====================================================
 
 router.delete(
   "/delete/:id",
   deleteEvent
 );
+
+// =====================================================
+// EXPORT
+// =====================================================
 
 module.exports = router;

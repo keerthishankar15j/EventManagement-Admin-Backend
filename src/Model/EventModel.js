@@ -2,11 +2,19 @@ const mongoose = require("mongoose");
 
 const eventSchema = new mongoose.Schema(
   {
+    // =================================================
+    // EVENT NAME
+    // =================================================
+
     name: {
       type: String,
       required: true,
       trim: true,
     },
+
+    // =================================================
+    // ORGANIZER
+    // =================================================
 
     organizer: {
       type: String,
@@ -14,15 +22,27 @@ const eventSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // =================================================
+    // DATE
+    // =================================================
+
     date: {
       type: String,
       required: true,
     },
 
+    // =================================================
+    // TIME
+    // =================================================
+
     time: {
       type: String,
       required: true,
     },
+
+    // =================================================
+    // LOCATION
+    // =================================================
 
     location: {
       type: String,
@@ -30,11 +50,19 @@ const eventSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // =================================================
+    // DESCRIPTION
+    // =================================================
+
     description: {
       type: String,
       required: true,
       trim: true,
     },
+
+    // =================================================
+    // CATEGORY
+    // =================================================
 
     category: {
       type: String,
@@ -51,11 +79,19 @@ const eventSchema = new mongoose.Schema(
       ],
     },
 
+    // =================================================
+    // NUMBER OF TICKETS
+    // =================================================
+
     tickets: {
       type: Number,
       required: true,
       min: 1,
     },
+
+    // =================================================
+    // TICKET PRICE
+    // =================================================
 
     ticketPrice: {
       type: Number,
@@ -63,16 +99,24 @@ const eventSchema = new mongoose.Schema(
       min: 0,
     },
 
+    // =================================================
+    // IMAGE
+    // =================================================
+
     image: {
       type: String,
       required: true,
     },
   },
+
   {
     timestamps: true,
   }
 );
 
-module.exports =
+// Prevent model overwrite error
+const Event =
   mongoose.models.Event ||
   mongoose.model("Event", eventSchema);
+
+module.exports = Event;
