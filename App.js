@@ -5,7 +5,10 @@ const mongoose = require("mongoose");
 
 require("dotenv").config();
 
-// Routes
+// =========================
+// ROUTES
+// =========================
+
 const userRoutes = require("./src/Router/UserRouter");
 const eventRoutes = require("./src/Router/EventRouter");
 const loginHistoryRoutes = require("./src/Router/LoginHistoryRoute");
@@ -15,17 +18,29 @@ const app = express();
 // =========================
 // CORS
 // =========================
+
 app.use(
   cors({
     origin: "*",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
   })
 );
 
 // =========================
 // BODY PARSER
 // =========================
+
 app.use(express.json());
 
 app.use(
@@ -37,13 +52,21 @@ app.use(
 // =========================
 // UPLOADS
 // =========================
-const uploadFolder = path.join(__dirname, "uploads");
 
-app.use("/uploads", express.static(uploadFolder));
+const uploadFolder = path.join(
+  __dirname,
+  "uploads"
+);
+
+app.use(
+  "/uploads",
+  express.static(uploadFolder)
+);
 
 // =========================
 // MONGODB CONNECTION
 // =========================
+
 let isConnected = false;
 
 const connectDB = async () => {
@@ -55,10 +78,14 @@ const connectDB = async () => {
   }
 
   if (!process.env.MONGO_URI) {
-    throw new Error("MONGO_URI is not defined");
+    throw new Error(
+      "MONGO_URI is not defined"
+    );
   }
 
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(
+    process.env.MONGO_URI
+  );
 
   isConnected = true;
 
@@ -68,6 +95,7 @@ const connectDB = async () => {
 // =========================
 // DATABASE MIDDLEWARE
 // =========================
+
 app.use(async (req, res, next) => {
   try {
     await connectDB();
@@ -80,7 +108,8 @@ app.use(async (req, res, next) => {
 
     return res.status(500).json({
       success: false,
-      message: "Database connection failed",
+      message:
+        "Database connection failed",
       error: error.message,
     });
   }
@@ -89,6 +118,7 @@ app.use(async (req, res, next) => {
 // =========================
 // HOME / HEALTH CHECK
 // =========================
+
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -104,18 +134,19 @@ app.get("/", (req, res) => {
 // API ROUTES
 // =========================
 
-// User / Login routes
 app.use("/login", userRoutes);
 
-// Login History routes
-app.use("/loginhistory", loginHistoryRoutes);
+app.use(
+  "/loginhistory",
+  loginHistoryRoutes
+);
 
-// Event routes
 app.use("/events", eventRoutes);
 
 // =========================
 // 404 HANDLER
 // =========================
+
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -127,20 +158,25 @@ app.use((req, res) => {
 // =========================
 // ERROR HANDLER
 // =========================
-app.use((err, req, res, next) => {
-  console.error(
-    "UNHANDLED SERVER ERROR:",
-    err
-  );
 
-  res.status(500).json({
-    success: false,
-    message: "Internal server error",
-    error: err.message,
-  });
-});
+app.use(
+  (err, req, res, next) => {
+    console.error(
+      "UNHANDLED SERVER ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      success: false,
+      message:
+        "Internal server error",
+      error: err.message,
+    });
+  }
+);
 
 // =========================
 // EXPORT APP
 // =========================
+
 module.exports = app;
