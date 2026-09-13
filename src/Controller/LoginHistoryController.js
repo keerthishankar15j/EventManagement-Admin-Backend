@@ -1,4 +1,4 @@
-const LoginHistory = require("../Models/LoginHistoryModel");
+const LoginHistory = require("../Model/LoginHistoryModel");
 
 // =====================================================
 // GET LOGIN HISTORY
@@ -6,20 +6,16 @@ const LoginHistory = require("../Models/LoginHistoryModel");
 
 const getLoginHistory = async (req, res) => {
   try {
-    const history = await LoginHistory.find()
-      .sort({
-        loginTime: -1,
-      });
+    const history = await LoginHistory.find().sort({
+      loginTime: -1,
+    });
 
     return res.status(200).json({
       success: true,
       history,
     });
   } catch (error) {
-    console.error(
-      "GET LOGIN HISTORY ERROR:",
-      error
-    );
+    console.error("GET LOGIN HISTORY ERROR:", error);
 
     return res.status(500).json({
       success: false,

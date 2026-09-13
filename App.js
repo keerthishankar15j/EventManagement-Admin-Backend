@@ -4,15 +4,17 @@ const path = require("path");
 const mongoose = require("mongoose");
 
 require("dotenv").config();
+
+// Routes
 const userRoutes = require("./src/Router/UserRouter");
 const eventRoutes = require("./src/Router/EventRouter");
+const loginHistoryRoutes = require("./src/Router/LoginHistoryRoute");
 
 const app = express();
 
-// =====================================================
+// =========================
 // CORS
-// =====================================================
-
+// =========================
 app.use(
   cors({
     origin: "*",
@@ -21,10 +23,9 @@ app.use(
   })
 );
 
-// =====================================================
+// =========================
 // BODY PARSER
-// =====================================================
-
+// =========================
 app.use(express.json());
 
 app.use(
@@ -33,25 +34,19 @@ app.use(
   })
 );
 
-// =====================================================
-// STATIC FILES
-// =====================================================
-
+// =========================
+// UPLOADS
+// =========================
 const uploadFolder = path.join(__dirname, "uploads");
 
-app.use(
-  "/uploads",
-  express.static(uploadFolder)
-);
+app.use("/uploads", express.static(uploadFolder));
 
-// =====================================================
-// MONGODB
-// =====================================================
-
+// =========================
+// MONGODB CONNECTION
+// =========================
 let isConnected = false;
 
 const connectDB = async () => {
-  // Reuse existing connection
   if (
     isConnected &&
     mongoose.connection.readyState === 1
@@ -59,12 +54,10 @@ const connectDB = async () => {
     return;
   }
 
-  // Check MongoDB URI
   if (!process.env.MONGO_URI) {
     throw new Error("MONGO_URI is not defined");
   }
 
-  // Connect MongoDB
   await mongoose.connect(process.env.MONGO_URI);
 
   isConnected = true;
@@ -72,10 +65,9 @@ const connectDB = async () => {
   console.log("MongoDB connected");
 };
 
-// =====================================================
+// =========================
 // DATABASE MIDDLEWARE
-// =====================================================
-
+// =========================
 app.use(async (req, res, next) => {
   try {
     await connectDB();
@@ -94,10 +86,9 @@ app.use(async (req, res, next) => {
   }
 });
 
-// =====================================================
-// ROOT API
-// =====================================================
-
+// =========================
+// HOME / HEALTH CHECK
+// =========================
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -109,42 +100,22 @@ app.get("/", (req, res) => {
   });
 });
 
-// =====================================================
-// USER ROUTES
-// =====================================================
+// =========================
+// API ROUTES
+// =========================
 
-// UserRouter.js
+// User / Login routes
 app.use("/login", userRoutes);
 
-// =====================================================
-// LOGIN HISTORY
-// =====================================================
+// Login History routes
+app.use("/loginhistory", loginHistoryRoutes);
 
-// If you want to use LoginHistoryRoute.js,
-// uncomment the following code:
-
-/*
-const loginHistoryRoutes = require(
-  "./src/Router/LoginHistoryRoute"
-);
-
-app.use(
-  "/loginhistory",
-  loginHistoryRoutes
-);
-*/
-
-// =====================================================
-// EVENT ROUTES
-// =====================================================
-
-// EventRouter.js
+// Event routes
 app.use("/events", eventRoutes);
 
-// =====================================================
+// =========================
 // 404 HANDLER
-// =====================================================
-
+// =========================
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -153,10 +124,9 @@ app.use((req, res) => {
   });
 });
 
-// =====================================================
+// =========================
 // ERROR HANDLER
-// =====================================================
-
+// =========================
 app.use((err, req, res, next) => {
   console.error(
     "UNHANDLED SERVER ERROR:",
@@ -170,8 +140,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// =====================================================
-// VERCEL EXPORT
-// =====================================================
-
+// =========================
+// EXPORT APP
+// =========================
 module.exports = app;

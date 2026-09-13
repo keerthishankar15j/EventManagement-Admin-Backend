@@ -6,9 +6,7 @@ const {
   getLoginHistory,
 } = require("../Controller/LoginHistoryController");
 
-router.get(
-  "/gethistory",
-  getLoginHistory
-);
+// GET LOGIN HISTORY
+router.get("/gethistory", getLoginHistory);
 
 module.exports = router;
