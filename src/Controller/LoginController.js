@@ -4,86 +4,53 @@ const {
   getIndividualUserData,
 } = require("../Server/LoginServer");
 
-
-// =====================================================
-// LOGIN USER
-// =====================================================
-
+// Login user
 const loginuser = async (req, res) => {
   try {
     const result = await loginUserdata(req.body);
 
-    if (result.success) {
-      return res.status(200).json(result);
-    }
-
-    return res.status(400).json(result);
-
+    return res.status(200).json(result);
   } catch (error) {
-    console.error("LOGIN CONTROLLER ERROR:", error);
+    console.error("Login Controller Error:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Login failed",
     });
   }
 };
 
-
-// =====================================================
-// GET ALL USERS
-// =====================================================
-
+// Get all users
 const getUsers = async (req, res) => {
   try {
     const result = await getUsersData();
 
-    if (result.success) {
-      return res.status(200).json(result);
-    }
-
-    return res.status(400).json(result);
-
+    return res.status(200).json(result);
   } catch (error) {
-    console.error("GET USERS CONTROLLER ERROR:", error);
+    console.error("Get Users Controller Error:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Failed to get users",
     });
   }
 };
 
-
-// =====================================================
-// GET INDIVIDUAL USER
-// =====================================================
-
+// Get individual user
 const getIndividualUser = async (req, res) => {
   try {
-    const { id } = req.params;
+    const result = await getIndividualUserData(req.params.id);
 
-    const result = await getIndividualUserData(id);
-
-    if (result.success) {
-      return res.status(200).json(result);
-    }
-
-    return res.status(404).json(result);
-
+    return res.status(200).json(result);
   } catch (error) {
-    console.error(
-      "GET INDIVIDUAL USER CONTROLLER ERROR:",
-      error
-    );
+    console.error("Get Individual User Controller Error:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Failed to get user",
     });
   }
 };
-
 
 module.exports = {
   loginuser,
