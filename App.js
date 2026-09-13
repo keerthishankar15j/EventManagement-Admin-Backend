@@ -12,29 +12,12 @@ const eventRoutes = require("./src/Router/EventRouter");
 const loginHistoryRoutes = require("./src/Router/LoginHistoryRoute");
 
 // =====================================================
-// CORS
+// CORS CONFIGURATION
 // =====================================================
-
-const allowedOrigins = [
-  "https://event-admin-one.vercel.app",
-  "http://localhost:5173",
-];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow requests without origin
-      // (Postman, server-to-server, etc.)
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("Not allowed by CORS"));
-    },
+    origin: "https://event-admin-one.vercel.app",
 
     methods: [
       "GET",
@@ -80,7 +63,7 @@ app.use(
 );
 
 // =====================================================
-// HOME
+// ROOT API
 // =====================================================
 
 app.get("/", (req, res) => {
@@ -91,33 +74,13 @@ app.get("/", (req, res) => {
 });
 
 // =====================================================
-// 404 HANDLER
-// =====================================================
-
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route not found",
-    path: req.originalUrl,
-  });
-});
-
-// =====================================================
 // ERROR HANDLER
 // =====================================================
 
 app.use((err, req, res, next) => {
   console.error("GLOBAL ERROR:", err);
 
-  // CORS error
-  if (err.message === "Not allowed by CORS") {
-    return res.status(403).json({
-      success: false,
-      message: "CORS error: Origin not allowed",
-    });
-  }
-
-  return res.status(500).json({
+  res.status(500).json({
     success: false,
     message: "Internal server error",
     error: err.message,
@@ -125,7 +88,7 @@ app.use((err, req, res, next) => {
 });
 
 // =====================================================
-// EXPORT
+// EXPORT APP
 // =====================================================
 
 module.exports = app;
