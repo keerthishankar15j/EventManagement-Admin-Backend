@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 
 require("dotenv").config();
 
-const userRoutes = require("./src/Router/UserRoute");
+const userRoutes = require("./src/Router/UserRouter");
 const eventRoutes = require("./src/Router/EventRouter");
 
 const app = express();
@@ -52,6 +52,7 @@ app.use(
 let isConnected = false;
 
 const connectDB = async () => {
+  // Reuse existing connection
   if (
     isConnected &&
     mongoose.connection.readyState === 1
@@ -59,10 +60,12 @@ const connectDB = async () => {
     return;
   }
 
+  // Check MongoDB URI
   if (!process.env.MONGO_URI) {
     throw new Error("MONGO_URI is not defined");
   }
 
+  // Connect MongoDB
   await mongoose.connect(process.env.MONGO_URI);
 
   isConnected = true;
@@ -84,7 +87,7 @@ app.use(async (req, res, next) => {
       error
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Database connection failed",
       error: error.message,
@@ -93,7 +96,7 @@ app.use(async (req, res, next) => {
 });
 
 // =====================================================
-// ROOT
+// ROOT API
 // =====================================================
 
 app.get("/", (req, res) => {
@@ -111,31 +114,36 @@ app.get("/", (req, res) => {
 // USER ROUTES
 // =====================================================
 
+// UserRouter.js
 app.use("/login", userRoutes);
 
 // =====================================================
 // LOGIN HISTORY
 // =====================================================
 
-// If you have LoginHistoryRoute.js, uncomment:
-//
-// const loginHistoryRoutes = require(
-//   "./src/Router/LoginHistoryRoute"
-// );
-//
-// app.use(
-//   "/loginhistory",
-//   loginHistoryRoutes
-// );
+// If you want to use LoginHistoryRoute.js,
+// uncomment the following code:
+
+/*
+const loginHistoryRoutes = require(
+  "./src/Router/LoginHistoryRoute"
+);
+
+app.use(
+  "/loginhistory",
+  loginHistoryRoutes
+);
+*/
 
 // =====================================================
 // EVENT ROUTES
 // =====================================================
 
+// EventRouter.js
 app.use("/events", eventRoutes);
 
 // =====================================================
-// 404
+// 404 HANDLER
 // =====================================================
 
 app.use((req, res) => {
