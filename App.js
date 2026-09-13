@@ -114,7 +114,7 @@ app.get("/", (req, res) => {
 // =====================================================
 
 // UserRouter.js
-app.use("/login", userRoutes);
+app.use("/login", userRouter);
 
 // =====================================================
 // LOGIN HISTORY
