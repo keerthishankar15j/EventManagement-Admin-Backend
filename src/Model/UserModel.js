@@ -16,6 +16,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      trim: true,
+      lowercase: true,
     },
 
     phone: {
@@ -38,6 +40,21 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    profileImage: {
+      type: String,
+      default: "",
+    },
+
+    bio: {
+      type: String,
+      default: "",
+    },
+
+    role: {
+      type: String,
+      default: "user",
+    },
+
     status: {
       type: String,
       default: "Active",
@@ -53,4 +70,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("AdminUser", userSchema);
+module.exports =
+  mongoose.models.AdminUser ||
+  mongoose.model("AdminUser", userSchema);

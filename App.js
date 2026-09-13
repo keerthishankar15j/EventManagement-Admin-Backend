@@ -6,18 +6,40 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 const eventRoutes = require("./src/Router/EventRouter");
+const userRoutes = require("./routes/UserRoute");
+const loginHistoryRoutes = require("./routes/LoginHistoryRoute");
 
 const app = express();
 
 // =====================================================
-// MIDDLEWARE
+// CORS
 // =====================================================
 
 app.use(
   cors({
-    origin: "*",
+    origin: [
+      "https://event-admin-one.vercel.app",
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ],
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
   })
 );
+
+// =====================================================
+// BODY PARSER
+// =====================================================
 
 app.use(express.json());
 
@@ -28,10 +50,13 @@ app.use(
 );
 
 // =====================================================
-// STATIC UPLOADS
+// STATIC
 // =====================================================
 
-const uploadFolder = path.join(__dirname, "uploads");
+const uploadFolder = path.join(
+  __dirname,
+  "uploads"
+);
 
 app.use(
   "/uploads",
@@ -39,7 +64,7 @@ app.use(
 );
 
 // =====================================================
-// MONGODB CONNECTION
+// MONGODB
 // =====================================================
 
 let isConnected = false;
@@ -53,10 +78,14 @@ const connectDB = async () => {
   }
 
   if (!process.env.MONGO_URI) {
-    throw new Error("MONGO_URI is not defined");
+    throw new Error(
+      "MONGO_URI is not defined"
+    );
   }
 
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(
+    process.env.MONGO_URI
+  );
 
   isConnected = true;
 
@@ -64,51 +93,55 @@ const connectDB = async () => {
 };
 
 // =====================================================
-// ROOT
+// DATABASE MIDDLEWARE
 // =====================================================
 
-app.get("/", async (req, res) => {
+app.use(async (req, res, next) => {
   try {
     await connectDB();
-
-    res.status(200).json({
-      success: true,
-      message: "Admin API is working!",
-      database: "Connected",
-    });
+    next();
   } catch (error) {
-    console.error("ROOT DB ERROR:", error);
+    console.error(
+      "DATABASE CONNECTION ERROR:",
+      error
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Database connection failed",
+      error: error.message,
     });
   }
 });
 
 // =====================================================
-// EVENT DATABASE MIDDLEWARE
+// ROOT
+// =====================================================
+
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Admin API is working!",
+    database: "Connected",
+  });
+});
+
+// =====================================================
+// USER ROUTES
 // =====================================================
 
 app.use(
-  "/events",
-  async (req, res, next) => {
-    try {
-      await connectDB();
-      next();
-    } catch (error) {
-      console.error(
-        "DATABASE CONNECTION ERROR:",
-        error
-      );
+  "/login",
+  userRoutes
+);
 
-      res.status(500).json({
-        success: false,
-        message: "Database connection failed",
-        error: error.message,
-      });
-    }
-  }
+// =====================================================
+// LOGIN HISTORY
+// =====================================================
+
+app.use(
+  "/loginhistory",
+  loginHistoryRoutes
 );
 
 // =====================================================
@@ -149,7 +182,7 @@ app.use(
 );
 
 // =====================================================
-// EXPORT FOR VERCEL
+// EXPORT
 // =====================================================
 
 module.exports = app;

@@ -8,17 +8,43 @@ const {
   loginUser,
 } = require("../Controller/UserController");
 
+// =====================================================
+// SYNC USERS FROM USER API
+// GET /login/sync
+// =====================================================
 
-// Fetch from User Side + Store in Admin DB
-router.get("/sync", getAndSyncUsers);
+router.get(
+  "/sync",
+  getAndSyncUsers
+);
 
+// =====================================================
+// GET USERS
+// GET /login/getusers
+// =====================================================
 
-// Get users from Admin DB
-router.get("/", getUsers);
+router.get(
+  "/getusers",
+  getUsers
+);
 
+// =====================================================
+// ALSO SUPPORT /login/
+// =====================================================
 
-// Login
-router.post("/login", loginUser);
+router.get(
+  "/",
+  getUsers
+);
 
+// =====================================================
+// LOGIN
+// POST /login/login
+// =====================================================
+
+router.post(
+  "/login",
+  loginUser
+);
 
 module.exports = router;
