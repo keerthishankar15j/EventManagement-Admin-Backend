@@ -2,50 +2,19 @@ const express = require("express");
 
 const router = express.Router();
 
-
-// =====================================================
-// LOGIN CONTROLLER
-// =====================================================
-
 const {
   loginuser,
   getUsers,
   getIndividualUser,
 } = require("../Controller/LoginController");
 
+// Login user
+router.post("/loginuser", loginuser);
 
-// =====================================================
-// LOGIN USER
-// =====================================================
+// Get all users
+router.get("/getusers", getUsers);
 
-router.post(
-  "/loginuser",
-  loginuser
-);
-
-
-// =====================================================
-// GET ALL USERS
-// =====================================================
-
-router.get(
-  "/getusers",
-  getUsers
-);
-
-
-// =====================================================
-// GET INDIVIDUAL USER
-// =====================================================
-
-router.get(
-  "/getuser/:id",
-  getIndividualUser
-);
-
-
-// =====================================================
-// EXPORT
-// =====================================================
+// Get individual user
+router.get("/getuser/:id", getIndividualUser);
 
 module.exports = router;
