@@ -6,40 +6,21 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 const eventRoutes = require("./src/Router/EventRouter");
-const userRoutes = require("./routes/UserRoute");
-const loginHistoryRoutes = require("./routes/LoginHistoryRoute");
+const userRoutes = require("./src/Router/UserRoute");
 
 const app = express();
 
 // =====================================================
-// CORS
+// MIDDLEWARE
 // =====================================================
 
 app.use(
   cors({
-    origin: [
-      "https://event-admin-one.vercel.app",
-      "http://localhost:5173",
-      "http://localhost:3000",
-    ],
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS",
-    ],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-    ],
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
-// =====================================================
-// BODY PARSER
-// =====================================================
 
 app.use(express.json());
 
@@ -50,18 +31,12 @@ app.use(
 );
 
 // =====================================================
-// STATIC
+// STATIC UPLOADS
 // =====================================================
 
-const uploadFolder = path.join(
-  __dirname,
-  "uploads"
-);
+const uploadFolder = path.join(__dirname, "uploads");
 
-app.use(
-  "/uploads",
-  express.static(uploadFolder)
-);
+app.use("/uploads", express.static(uploadFolder));
 
 // =====================================================
 // MONGODB
@@ -78,14 +53,10 @@ const connectDB = async () => {
   }
 
   if (!process.env.MONGO_URI) {
-    throw new Error(
-      "MONGO_URI is not defined"
-    );
+    throw new Error("MONGO_URI is not defined");
   }
 
-  await mongoose.connect(
-    process.env.MONGO_URI
-  );
+  await mongoose.connect(process.env.MONGO_URI);
 
   isConnected = true;
 
@@ -101,12 +72,9 @@ app.use(async (req, res, next) => {
     await connectDB();
     next();
   } catch (error) {
-    console.error(
-      "DATABASE CONNECTION ERROR:",
-      error
-    );
+    console.error("DATABASE CONNECTION ERROR:", error);
 
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Database connection failed",
       error: error.message,
@@ -122,7 +90,10 @@ app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
     message: "Admin API is working!",
-    database: "Connected",
+    database:
+      mongoose.connection.readyState === 1
+        ? "Connected"
+        : "Disconnected",
   });
 });
 
@@ -130,59 +101,42 @@ app.get("/", (req, res) => {
 // USER ROUTES
 // =====================================================
 
-app.use(
-  "/login",
-  userRoutes
-);
-
-// =====================================================
-// LOGIN HISTORY
-// =====================================================
-
-app.use(
-  "/loginhistory",
-  loginHistoryRoutes
-);
+app.use("/users", userRoutes);
 
 // =====================================================
 // EVENT ROUTES
 // =====================================================
 
-app.use(
-  "/events",
-  eventRoutes
-);
-
-// =====================================================
-// EVENT TEST
-// =====================================================
-
-app.get(
-  "/events/test",
-  (req, res) => {
-    res.json({
-      success: true,
-      message: "EVENT ROUTE WORKING",
-    });
-  }
-);
+app.use("/events", eventRoutes);
 
 // =====================================================
 // 404
 // =====================================================
 
-app.use(
-  (req, res) => {
-    res.status(404).json({
-      success: false,
-      message: "API route not found",
-      path: req.originalUrl,
-    });
-  }
-);
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "API route not found",
+    path: req.originalUrl,
+  });
+});
 
 // =====================================================
-// EXPORT
+// ERROR HANDLER
+// =====================================================
+
+app.use((err, req, res, next) => {
+  console.error("SERVER ERROR:", err);
+
+  res.status(500).json({
+    success: false,
+    message: "Internal server error",
+    error: err.message,
+  });
+});
+
+// =====================================================
+// VERCEL
 // =====================================================
 
 module.exports = app;
