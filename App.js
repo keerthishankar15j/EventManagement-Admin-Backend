@@ -5,19 +5,26 @@ const mongoose = require("mongoose");
 
 require("dotenv").config();
 
-// ================================
+// =====================================================
 // ROUTES
-// ================================
+// =====================================================
+
 const userRoutes = require("./src/Router/UserRouter");
+
 const eventRoutes = require("./src/Router/EventRouter");
+
 const loginHistoryRoutes = require(
   "./src/Router/LoginHistoryRoute"
 );
 
+// =====================================================
+// APP
+// =====================================================
+
 const app = express();
 
 // =====================================================
-// CORS CONFIGURATION
+// CORS
 // =====================================================
 
 const allowedOrigins = [
@@ -28,16 +35,18 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow Postman / server-to-server requests
+
+    // Allow Postman / direct server requests
     if (!origin) {
       return callback(null, true);
     }
 
+    // Allow approved frontend URLs
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    console.log("CORS BLOCKED:", origin);
+    console.log("Blocked CORS origin:", origin);
 
     return callback(
       new Error("Not allowed by CORS")
@@ -61,11 +70,7 @@ const corsOptions = {
   credentials: true,
 };
 
-// Apply CORS
 app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options("*", cors(corsOptions));
 
 // =====================================================
 // BODY PARSER
@@ -100,7 +105,9 @@ app.use(
 let isConnected = false;
 
 const connectDB = async () => {
+
   try {
+
     // Already connected
     if (
       isConnected &&
@@ -111,9 +118,11 @@ const connectDB = async () => {
 
     // Check MONGO_URI
     if (!process.env.MONGO_URI) {
+
       throw new Error(
-        "MONGO_URI is not defined in environment variables"
+        "MONGO_URI is not defined"
       );
+
     }
 
     await mongoose.connect(
@@ -127,10 +136,11 @@ const connectDB = async () => {
     );
 
   } catch (error) {
+
     isConnected = false;
 
     console.error(
-      "MongoDB connection failed:",
+      "MongoDB connection error:",
       error.message
     );
 
@@ -143,14 +153,17 @@ const connectDB = async () => {
 // =====================================================
 
 app.use(async (req, res, next) => {
+
   try {
+
     await connectDB();
 
     next();
 
   } catch (error) {
+
     console.error(
-      "DATABASE CONNECTION ERROR:",
+      "DATABASE ERROR:",
       error.message
     );
 
@@ -167,7 +180,8 @@ app.use(async (req, res, next) => {
 // =====================================================
 
 app.get("/", (req, res) => {
-  res.status(200).json({
+
+  return res.status(200).json({
     success: true,
     message: "User API is working!",
     database:
@@ -175,10 +189,11 @@ app.get("/", (req, res) => {
         ? "Connected"
         : "Disconnected",
   });
+
 });
 
 // =====================================================
-// USER / LOGIN ROUTES
+// LOGIN / USER ROUTES
 // =====================================================
 
 app.use(
@@ -205,15 +220,17 @@ app.use(
 );
 
 // =====================================================
-// 404 HANDLER
+// 404
 // =====================================================
 
 app.use((req, res) => {
-  res.status(404).json({
+
+  return res.status(404).json({
     success: false,
     message: "API route not found",
     path: req.originalUrl,
   });
+
 });
 
 // =====================================================
@@ -222,6 +239,7 @@ app.use((req, res) => {
 
 app.use(
   (err, req, res, next) => {
+
     console.error(
       "UNHANDLED SERVER ERROR:",
       err
@@ -230,13 +248,15 @@ app.use(
     return res.status(500).json({
       success: false,
       message:
-        err.message || "Internal server error",
+        err.message ||
+        "Internal server error",
     });
+
   }
 );
 
 // =====================================================
-// EXPORT APP
+// EXPORT
 // =====================================================
 
 module.exports = app;
