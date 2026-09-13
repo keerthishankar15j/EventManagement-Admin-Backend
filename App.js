@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -18,12 +19,7 @@ app.use(
     origin: "*",
   })
 );
-const adminUserRoute = require("./routes/AdminUserRoute");
 
-app.use(
-  "/adminusers",
-  adminUserRoute
-);
 app.use(express.json());
 
 app.use(
@@ -38,7 +34,10 @@ app.use(
 
 const uploadFolder = path.join(__dirname, "uploads");
 
-app.use("/uploads", express.static(uploadFolder));
+app.use(
+  "/uploads",
+  express.static(uploadFolder)
+);
 
 // =====================================================
 // MONGODB CONNECTION
@@ -47,7 +46,10 @@ app.use("/uploads", express.static(uploadFolder));
 let isConnected = false;
 
 const connectDB = async () => {
-  if (isConnected && mongoose.connection.readyState === 1) {
+  if (
+    isConnected &&
+    mongoose.connection.readyState === 1
+  ) {
     return;
   }
 
@@ -55,7 +57,9 @@ const connectDB = async () => {
     throw new Error("MONGO_URI is not defined");
   }
 
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(
+    process.env.MONGO_URI
+  );
 
   isConnected = true;
 
@@ -75,8 +79,13 @@ app.get("/", async (req, res) => {
       message: "Admin API is working!",
       database: "Connected",
     });
+
   } catch (error) {
-    console.error("ROOT DB ERROR:", error);
+
+    console.error(
+      "ROOT DB ERROR:",
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -89,35 +98,75 @@ app.get("/", async (req, res) => {
 // DATABASE MIDDLEWARE FOR EVENTS
 // =====================================================
 
-app.use("/events", async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    console.error("DATABASE CONNECTION ERROR:", error);
+app.use(
+  "/events",
+  async (req, res, next) => {
 
-    res.status(500).json({
-      success: false,
-      message: "Database connection failed",
-      error: error.message,
-    });
+    try {
+
+      await connectDB();
+
+      next();
+
+    } catch (error) {
+
+      console.error(
+        "DATABASE CONNECTION ERROR:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "Database connection failed",
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 // =====================================================
 // EVENT ROUTES
 // =====================================================
 
-app.use("/events", eventRoutes);
+app.use(
+  "/events",
+  eventRoutes
+);
+
+// =====================================================
+// EVENT TEST
+// =====================================================
+
+app.get(
+  "/events/test",
+  (req, res) => {
+
+    res.json({
+      success: true,
+      message: "EVENT ROUTE WORKING",
+    });
+
+  }
+);
+
+// =====================================================
+// 404
+// =====================================================
+
+app.use(
+  (req, res) => {
+
+    res.status(404).json({
+      success: false,
+      message: "API route not found",
+      path: req.originalUrl,
+    });
+
+  }
+);
 
 // =====================================================
 // EXPORT FOR VERCEL
 // =====================================================
-app.get("/events/test", (req, res) => {
-  res.json({
-    success: true,
-    message: "EVENT ROUTE WORKING"
-  });
-});
 
 module.exports = app;
