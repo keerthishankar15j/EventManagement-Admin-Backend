@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const mongoose = require("mongoose");
 
 require("dotenv").config();
@@ -9,159 +10,88 @@ const eventRoutes = require("./src/Router/EventRouter");
 const app = express();
 
 // =====================================================
-// BASIC CONFIGURATION
-// =====================================================
-
-const PORT = process.env.PORT || 9000;
-
-// =====================================================
-// CORS
+// MIDDLEWARE
 // =====================================================
 
 app.use(
   cors({
     origin: "*",
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS",
-    ],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-    ],
   })
 );
 
-// =====================================================
-// BODY PARSER
-// =====================================================
-
-app.use(
-  express.json({
-    limit: "10mb",
-  })
-);
+app.use(express.json());
 
 app.use(
   express.urlencoded({
     extended: true,
-    limit: "10mb",
   })
 );
+
+// =====================================================
+// STATIC UPLOADS
+// =====================================================
+
+const uploadFolder = path.join(__dirname, "uploads");
+
+app.use("/uploads", express.static(uploadFolder));
 
 // =====================================================
 // MONGODB CONNECTION
 // =====================================================
 
-let connectionPromise = null;
+let isConnected = false;
 
 const connectDB = async () => {
-  try {
-    // Already connected
-    if (mongoose.connection.readyState === 1) {
-      return mongoose.connection;
-    }
-
-    // Connection already in progress
-    if (connectionPromise) {
-      await connectionPromise;
-      return mongoose.connection;
-    }
-
-    // Check MONGO_URI
-    if (!process.env.MONGO_URI) {
-      throw new Error(
-        "MONGO_URI is not defined in .env"
-      );
-    }
-
-    console.log("---------------------------------");
-    console.log("Connecting to MongoDB...");
-    console.log("---------------------------------");
-
-    connectionPromise = mongoose.connect(
-      process.env.MONGO_URI
-    );
-
-    await connectionPromise;
-
-    connectionPromise = null;
-
-    console.log("=================================");
-    console.log("MongoDB connected successfully");
-    console.log(
-      "Database:",
-      mongoose.connection.name
-    );
-    console.log(
-      "MongoDB Host:",
-      mongoose.connection.host
-    );
-    console.log(
-      "Connection State:",
-      mongoose.connection.readyState
-    );
-    console.log("=================================");
-
-    return mongoose.connection;
-
-  } catch (error) {
-    connectionPromise = null;
-
-    console.error("=================================");
-    console.error("MongoDB CONNECTION FAILED");
-    console.error("Error:", error.message);
-    console.error("=================================");
-
-    throw error;
+  if (isConnected && mongoose.connection.readyState === 1) {
+    return;
   }
+
+  if (!process.env.MONGO_URI) {
+    throw new Error("MONGO_URI is not defined");
+  }
+
+  await mongoose.connect(process.env.MONGO_URI);
+
+  isConnected = true;
+
+  console.log("MongoDB connected");
 };
 
 // =====================================================
-// MONGODB CONNECTION EVENTS
-// =====================================================
-
-mongoose.connection.on("connected", () => {
-  console.log("MongoDB event: CONNECTED");
-});
-
-mongoose.connection.on("error", (error) => {
-  console.error(
-    "MongoDB event ERROR:",
-    error.message
-  );
-});
-
-mongoose.connection.on("disconnected", () => {
-  console.log("MongoDB event: DISCONNECTED");
-});
-
-// =====================================================
-// TEST / ROOT ROUTE
+// ROOT
 // =====================================================
 
 app.get("/", async (req, res) => {
   try {
     await connectDB();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Admin API is working!",
       database: "Connected",
-      databaseName: mongoose.connection.name,
     });
-
   } catch (error) {
-    console.error(
-      "ROOT DATABASE ERROR:",
-      error
-    );
+    console.error("ROOT DB ERROR:", error);
 
-    return res.status(500).json({
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// =====================================================
+// DATABASE MIDDLEWARE FOR EVENTS
+// =====================================================
+
+app.use("/events", async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("DATABASE CONNECTION ERROR:", error);
+
+    res.status(500).json({
       success: false,
       message: "Database connection failed",
       error: error.message,
@@ -170,132 +100,19 @@ app.get("/", async (req, res) => {
 });
 
 // =====================================================
-// DATABASE MIDDLEWARE FOR EVENT ROUTES
+// EVENT ROUTES
 // =====================================================
 
-app.use(
-  "/events",
-  async (req, res, next) => {
-    try {
-      await connectDB();
-      next();
-
-    } catch (error) {
-      console.error(
-        "EVENT DATABASE ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Database connection failed",
-        error: error.message,
-      });
-    }
-  },
-  eventRoutes
-);
+app.use("/events", eventRoutes);
 
 // =====================================================
-// 404 ROUTE
+// EXPORT FOR VERCEL
 // =====================================================
-
-app.use((req, res) => {
-  return res.status(404).json({
-    success: false,
-    message: "Route not found",
-    path: req.originalUrl,
+app.get("/events/test", (req, res) => {
+  res.json({
+    success: true,
+    message: "EVENT ROUTE WORKING"
   });
 });
-
-// =====================================================
-// GLOBAL ERROR HANDLER
-// =====================================================
-
-app.use(
-  (err, req, res, next) => {
-    console.error("=================================");
-    console.error("GLOBAL ERROR");
-    console.error(err);
-    console.error("=================================");
-
-    return res.status(500).json({
-      success: false,
-      message:
-        err.message ||
-        "Internal server error",
-      error: err.message,
-    });
-  }
-);
-
-// =====================================================
-// LOCAL DEVELOPMENT SERVER
-// =====================================================
-
-const startLocalServer = async () => {
-  try {
-    console.log("");
-    console.log("=================================");
-    console.log("STARTING EVENT MANAGEMENT API");
-    console.log("=================================");
-
-    // Connect MongoDB before starting server
-    await connectDB();
-
-    console.log("");
-    console.log("Database check completed");
-    console.log("MongoDB Status: CONNECTED");
-    console.log("");
-
-    app.listen(PORT, () => {
-      console.log("=================================");
-      console.log("SERVER STARTED SUCCESSFULLY");
-      console.log("=================================");
-      console.log(
-        `Server running on port ${PORT}`
-      );
-      console.log(
-        `Local URL: http://localhost:${PORT}`
-      );
-      console.log(
-        `Events API: http://localhost:${PORT}/events`
-      );
-      console.log(
-        `Get Events: http://localhost:${PORT}/events/getevents`
-      );
-      console.log("=================================");
-      console.log("");
-    });
-
-  } catch (error) {
-    console.error("");
-    console.error("=================================");
-    console.error("SERVER START FAILED");
-    console.error("=================================");
-    console.error(
-      "MongoDB connection failed"
-    );
-    console.error(
-      "Reason:",
-      error.message
-    );
-    console.error("=================================");
-
-    process.exit(1);
-  }
-};
-
-// =====================================================
-// START LOCAL SERVER
-// =====================================================
-
-if (process.env.NODE_ENV !== "production") {
-  startLocalServer();
-}
-
-// =====================================================
-// VERCEL EXPORT
-// =====================================================
 
 module.exports = app;

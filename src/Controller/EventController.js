@@ -12,6 +12,15 @@ const createEvent = async (req, res) => {
     console.log("FILE:", req.file);
     console.log("=================================");
 
+    // Check image
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Event image is required",
+      });
+    }
+
+    // Check required fields
     const {
       name,
       organizer,
@@ -19,14 +28,9 @@ const createEvent = async (req, res) => {
       time,
       location,
       description,
-      category,
       tickets,
-      ticketPrice,
+      status,
     } = req.body;
-
-    // =================================================
-    // VALIDATION
-    // =================================================
 
     if (
       !name ||
@@ -35,9 +39,8 @@ const createEvent = async (req, res) => {
       !time ||
       !location ||
       !description ||
-      !category ||
       tickets === undefined ||
-      ticketPrice === undefined
+      !status
     ) {
       return res.status(400).json({
         success: false,
@@ -45,54 +48,36 @@ const createEvent = async (req, res) => {
       });
     }
 
-    // =================================================
-    // IMAGE VALIDATION
-    // =================================================
+    // Convert image to Base64
+    const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString(
+      "base64"
+    )}`;
 
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "Event image is required",
-      });
-    }
-
-    // =================================================
-    // CONVERT IMAGE TO BASE64
-    // =================================================
-
-    const imageBase64 =
-      `data:${req.file.mimetype};base64,` +
-      req.file.buffer.toString("base64");
-
-    // =================================================
-    // CREATE EVENT
-    // =================================================
-
+    // Create event
     const newEvent = new eventModel({
-      name: name.trim(),
-      organizer: organizer.trim(),
-      date,
-      time,
-      location: location.trim(),
-      description: description.trim(),
-      category,
+      name: name,
+      organizer: organizer,
+      date: date,
+      time: time,
+      location: location,
+      description: description,
       tickets: Number(tickets),
-      ticketPrice: Number(ticketPrice),
-      image: imageBase64,
+      status: status,
+
+      // Save image directly inside MongoDB
+      image: imageData,
     });
 
-    // =================================================
-    // SAVE
-    // =================================================
-
+    // Save to MongoDB
     const savedEvent = await newEvent.save();
+
+    console.log("EVENT SAVED:", savedEvent);
 
     return res.status(201).json({
       success: true,
       message: "Event created successfully",
       data: savedEvent,
     });
-
   } catch (error) {
     console.error("CREATE EVENT ERROR:", error);
 
@@ -110,23 +95,17 @@ const createEvent = async (req, res) => {
 
 const getEvents = async (req, res) => {
   try {
-    console.log("GET EVENTS REQUEST");
-
     const events = await eventModel
       .find()
-      .sort({ createdAt: -1 });
-
-    console.log(
-      "EVENTS FOUND:",
-      events.length
-    );
+      .sort({
+        createdAt: -1,
+      });
 
     return res.status(200).json({
       success: true,
       message: "Events fetched successfully",
       data: events,
     });
-
   } catch (error) {
     console.error("GET EVENTS ERROR:", error);
 
@@ -160,7 +139,6 @@ const getSingleEvent = async (req, res) => {
       message: "Event fetched successfully",
       data: event,
     });
-
   } catch (error) {
     console.error("GET SINGLE EVENT ERROR:", error);
 
@@ -180,95 +158,74 @@ const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const {
-      name,
-      organizer,
-      date,
-      time,
-      location,
-      description,
-      category,
-      tickets,
-      ticketPrice,
-    } = req.body;
+    console.log("=================================");
+    console.log("UPDATE EVENT");
+    console.log("ID:", id);
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+    console.log("=================================");
 
-    // =================================================
-    // FIND EVENT
-    // =================================================
+    const existingEvent = await eventModel.findById(id);
 
-    const event = await eventModel.findById(id);
-
-    if (!event) {
+    if (!existingEvent) {
       return res.status(404).json({
         success: false,
         message: "Event not found",
       });
     }
 
-    // =================================================
-    // UPDATE TEXT FIELDS
-    // =================================================
-
-    if (name !== undefined) {
-      event.name = name.trim();
+    // Update text fields
+    if (req.body.name !== undefined) {
+      existingEvent.name = req.body.name;
     }
 
-    if (organizer !== undefined) {
-      event.organizer = organizer.trim();
+    if (req.body.organizer !== undefined) {
+      existingEvent.organizer = req.body.organizer;
     }
 
-    if (date !== undefined) {
-      event.date = date;
+    if (req.body.date !== undefined) {
+      existingEvent.date = req.body.date;
     }
 
-    if (time !== undefined) {
-      event.time = time;
+    if (req.body.time !== undefined) {
+      existingEvent.time = req.body.time;
     }
 
-    if (location !== undefined) {
-      event.location = location.trim();
+    if (req.body.location !== undefined) {
+      existingEvent.location = req.body.location;
     }
 
-    if (description !== undefined) {
-      event.description = description.trim();
+    if (req.body.description !== undefined) {
+      existingEvent.description = req.body.description;
     }
 
-    if (category !== undefined) {
-      event.category = category;
+    if (req.body.tickets !== undefined) {
+      existingEvent.tickets = Number(req.body.tickets);
     }
 
-    if (tickets !== undefined) {
-      event.tickets = Number(tickets);
+    if (req.body.status !== undefined) {
+      existingEvent.status = req.body.status;
     }
 
-    if (ticketPrice !== undefined) {
-      event.ticketPrice = Number(ticketPrice);
-    }
-
-    // =================================================
-    // UPDATE IMAGE IF NEW IMAGE EXISTS
-    // =================================================
-
+    // Update image only when a new image is uploaded
     if (req.file) {
-      const imageBase64 =
-        `data:${req.file.mimetype};base64,` +
-        req.file.buffer.toString("base64");
+      const imageData = `data:${
+        req.file.mimetype
+      };base64,${req.file.buffer.toString("base64")}`;
 
-      event.image = imageBase64;
+      existingEvent.image = imageData;
     }
 
-    // =================================================
-    // SAVE
-    // =================================================
+    // Save updated event
+    const updatedEvent = await existingEvent.save();
 
-    const updatedEvent = await event.save();
+    console.log("UPDATED EVENT:", updatedEvent);
 
     return res.status(200).json({
       success: true,
       message: "Event updated successfully",
       data: updatedEvent,
     });
-
   } catch (error) {
     console.error("UPDATE EVENT ERROR:", error);
 
@@ -303,7 +260,6 @@ const deleteEvent = async (req, res) => {
       message: "Event deleted successfully",
       data: deletedEvent,
     });
-
   } catch (error) {
     console.error("DELETE EVENT ERROR:", error);
 
