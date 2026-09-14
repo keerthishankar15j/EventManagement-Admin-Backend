@@ -1,37 +1,33 @@
-const express =
-  require("express");
+const express = require("express");
 
-const router =
-  express.Router();
+const router = express.Router();
 
 const {
-  getAdminUsersController,
-  getAdminUserByIdController,
-} =
-  require(
-    "../Controller/AdminUserController"
-  );
+  receiveUser,
+  getAdminUsers,
+  getAdminUserById,
+} = require("../Controller/AdminUserController");
 
 
-// =====================================================
-// GET ALL USERS
-// =====================================================
+// User Backend → Admin Backend
+router.post(
+  "/sync-user",
+  receiveUser
+);
 
+
+// Admin Frontend → Admin Backend
 router.get(
   "/users",
-  getAdminUsersController
+  getAdminUsers
 );
 
 
-// =====================================================
-// GET SINGLE USER
-// =====================================================
-
+// Admin Frontend → Single User
 router.get(
   "/users/:id",
-  getAdminUserByIdController
+  getAdminUserById
 );
 
 
-module.exports =
-  router;
+module.exports = router;

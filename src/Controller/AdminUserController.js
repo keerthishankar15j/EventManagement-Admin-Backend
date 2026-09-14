@@ -1,117 +1,190 @@
-const {
-  getAdminUsers,
-  getAdminUserById,
-} = require("../Service/AdminUserService");
+const AdminUser = require("../Model/AdminUser");
 
 
-// =====================================================
+// ==========================================
+// RECEIVE USER FROM USER BACKEND
+// ==========================================
+
+const receiveUser = async (req, res) => {
+  try {
+
+    const user = req.body;
+
+    console.log(
+      "USER RECEIVED FROM USER BACKEND:",
+      user
+    );
+
+    if (!user._id) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    if (!user.email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+
+    const userData = {
+      sourceUserId: user._id,
+
+      name: user.name || "",
+
+      email: user.email,
+
+      phone: user.phone || "",
+
+      bio: user.bio || "",
+
+      profileImage:
+        user.profileImage || "",
+
+      role:
+        user.role || "user",
+
+      status:
+        user.status || "Offline",
+
+      source:
+        "user-project",
+    };
+
+
+    const savedUser =
+      await AdminUser.findOneAndUpdate(
+
+        {
+          sourceUserId: user._id,
+        },
+
+        {
+          $set: userData,
+        },
+
+        {
+          new: true,
+          upsert: true,
+        }
+      );
+
+
+    console.log(
+      "USER SAVED IN ADMIN DB:",
+      savedUser
+    );
+
+
+    return res.status(200).json({
+      success: true,
+
+      message:
+        "User synchronized successfully",
+
+      user: savedUser,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "RECEIVE USER ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// ==========================================
 // GET ALL USERS
-// =====================================================
+// ==========================================
 
-const getAdminUsersController =
-  async (req, res) => {
+const getAdminUsers = async (req, res) => {
 
-    try {
+  try {
 
-      const result =
-        await getAdminUsers();
-
-
-      if (result.success) {
-
-        return res
-          .status(200)
-          .json(result);
-
-      }
+    const users =
+      await AdminUser.find()
+        .sort({
+          createdAt: -1,
+        })
+        .lean();
 
 
-      return res
-        .status(500)
-        .json(result);
+    return res.status(200).json({
+      success: true,
 
-    } catch (error) {
+      count:
+        users.length,
 
-      console.error(
-        "GET ADMIN USERS CONTROLLER ERROR:",
-        error.message
-      );
+      users,
+    });
 
+  } catch (error) {
 
-      return res
-        .status(500)
-        .json({
-
-          success: false,
-
-          message:
-            error.message,
-
-        });
-
-    }
-
-  };
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 
-// =====================================================
+// ==========================================
 // GET SINGLE USER
-// =====================================================
+// ==========================================
 
-const getAdminUserByIdController =
-  async (req, res) => {
+const getAdminUserById = async (
+  req,
+  res
+) => {
 
-    try {
+  try {
 
-      const { id } =
-        req.params;
-
-
-      const result =
-        await getAdminUserById(id);
+    const { id } =
+      req.params;
 
 
-      if (result.success) {
-
-        return res
-          .status(200)
-          .json(result);
-
-      }
+    const user =
+      await AdminUser.findById(id)
+        .lean();
 
 
-      return res
-        .status(404)
-        .json(result);
+    if (!user) {
 
-    } catch (error) {
-
-      console.error(
-        "GET USER BY ID CONTROLLER ERROR:",
-        error.message
-      );
-
-
-      return res
-        .status(500)
-        .json({
-
-          success: false,
-
-          message:
-            error.message,
-
-        });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
 
     }
 
-  };
+
+    return res.status(200).json({
+      success: true,
+      user,
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 
 module.exports = {
-
-  getAdminUsersController,
-
-  getAdminUserByIdController,
-
+  receiveUser,
+  getAdminUsers,
+  getAdminUserById,
 };
