@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 
 require("dotenv").config();
 
-const eventRoutes = require("./src/Router/EventRouter");
+const eventRoutes = require("../Router/EventRouter");
 
 const app = express();
 
