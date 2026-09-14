@@ -3,38 +3,52 @@ const axios = require("axios");
 const AdminUser =
   require("../Model/AdminUser");
 
-
 // =====================================================
 // GET USERS FROM USER PROJECT
 // =====================================================
 
 const getUsersFromUserProject = async () => {
-
   try {
-
     const USER_API_URL =
       process.env.USER_API_URL;
 
     if (!USER_API_URL) {
-
       throw new Error(
-        "USER_API_URL is not defined"
+        "USER_API_URL is not defined in Admin backend environment variables"
       );
-
     }
 
+    const cleanUrl =
+      USER_API_URL.replace(/\/$/, "");
+
+    const userApiUrl =
+      `${cleanUrl}/login/getusers`;
+
     console.log(
-      "Getting users from:",
-      `${USER_API_URL}/login/getusers`
+      "===================================="
+    );
+
+    console.log(
+      "USER API URL:",
+      userApiUrl
+    );
+
+    console.log(
+      "===================================="
     );
 
     const response =
       await axios.get(
-        `${USER_API_URL}/login/getusers`,
+        userApiUrl,
         {
           timeout: 15000,
         }
       );
+
+    console.log(
+      "USER API STATUS:",
+      response.status
+    );
 
     console.log(
       "USER API RESPONSE:",
@@ -43,19 +57,18 @@ const getUsersFromUserProject = async () => {
 
     let users = [];
 
-
     // =================================================
-    // RESPONSE ARRAY
+    // RESPONSE IS ARRAY
     // =================================================
 
     if (
-      Array.isArray(response.data)
+      Array.isArray(
+        response.data
+      )
     ) {
-
-      users = response.data;
-
+      users =
+        response.data;
     }
-
 
     // =================================================
     // response.data.users
@@ -66,12 +79,9 @@ const getUsersFromUserProject = async () => {
         response.data?.users
       )
     ) {
-
       users =
         response.data.users;
-
     }
-
 
     // =================================================
     // response.data.data
@@ -82,12 +92,9 @@ const getUsersFromUserProject = async () => {
         response.data?.data
       )
     ) {
-
       users =
         response.data.data;
-
     }
-
 
     // =================================================
     // response.data.getuserdata
@@ -98,56 +105,93 @@ const getUsersFromUserProject = async () => {
         response.data?.getuserdata
       )
     ) {
-
       users =
         response.data.getuserdata;
-
     }
 
+    // =================================================
+    // USER API RETURNED ERROR
+    // =================================================
+
+    if (
+      response.data?.success === false
+    ) {
+      return {
+        success: false,
+        message:
+          response.data?.message ||
+          "User API returned success:false",
+        users: [],
+      };
+    }
+
+    // =================================================
+    // NO USERS
+    // =================================================
 
     if (!users.length) {
-
       return {
-
         success: false,
-
         message:
-          "No users found from User API",
-
+          "User API connected successfully, but no users were found",
         users: [],
-
       };
-
     }
 
+    // =================================================
+    // SUCCESS
+    // =================================================
 
     return {
-
       success: true,
-
+      message:
+        "Users fetched from User API",
       users,
-
     };
-
 
   } catch (error) {
 
     console.error(
-      "GET USER API ERROR:",
+      "===================================="
+    );
+
+    console.error(
+      "GET USER API ERROR"
+    );
+
+    console.error(
+      "MESSAGE:",
       error.message
     );
 
-    return {
+    if (error.response) {
 
+      console.error(
+        "STATUS:",
+        error.response.status
+      );
+
+      console.error(
+        "DATA:",
+        error.response.data
+      );
+
+    }
+
+    console.error(
+      "===================================="
+    );
+
+    return {
       success: false,
 
       message:
+        error.response?.data?.message ||
         error.message,
 
+      users: [],
     };
-
   }
-
 };
 
 
@@ -156,38 +200,52 @@ const getUsersFromUserProject = async () => {
 // =====================================================
 
 const syncUsers = async () => {
-
   try {
+
+    console.log(
+      "SYNC ALL USERS STARTED"
+    );
 
     const result =
       await getUsersFromUserProject();
 
+    // =================================================
+    // USER API FAILED
+    // =================================================
 
     if (!result.success) {
 
+      console.error(
+        "USER API SYNC FAILED:",
+        result.message
+      );
+
       return result;
-
     }
-
 
     const users =
       result.users;
 
-
     let inserted = 0;
     let updated = 0;
-
+    let skipped = 0;
 
     // =================================================
-    // LOOP
+    // LOOP USERS
     // =================================================
 
     for (const user of users) {
 
-      if (!user._id) {
+      if (!user || !user._id) {
+
+        skipped++;
+
+        console.log(
+          "Skipping user because _id is missing"
+        );
+
         continue;
       }
-
 
       const userData = {
 
@@ -217,12 +275,10 @@ const syncUsers = async () => {
 
         source:
           "user-project",
-
       };
 
-
       // =================================================
-      // CHECK USER
+      // FIND EXISTING USER
       // =================================================
 
       const existingUser =
@@ -231,7 +287,6 @@ const syncUsers = async () => {
             user._id,
         });
 
-
       // =================================================
       // UPDATE
       // =================================================
@@ -239,23 +294,23 @@ const syncUsers = async () => {
       if (existingUser) {
 
         await AdminUser.updateOne(
-
           {
             sourceUserId:
               user._id,
           },
-
           {
             $set:
               userData,
           }
-
         );
 
         updated++;
 
+        console.log(
+          "Updated user:",
+          user.email
+        );
       }
-
 
       // =================================================
       // INSERT
@@ -269,10 +324,20 @@ const syncUsers = async () => {
 
         inserted++;
 
+        console.log(
+          "Inserted user:",
+          user.email
+        );
       }
-
     }
 
+    // =================================================
+    // SUCCESS
+    // =================================================
+
+    console.log(
+      "SYNC ALL USERS COMPLETED"
+    );
 
     return {
 
@@ -288,8 +353,8 @@ const syncUsers = async () => {
 
       updated,
 
+      skipped,
     };
-
 
   } catch (error) {
 
@@ -298,18 +363,14 @@ const syncUsers = async () => {
       error.message
     );
 
-
     return {
 
       success: false,
 
       message:
         error.message,
-
     };
-
   }
-
 };
 
 
@@ -321,7 +382,10 @@ const syncSingleUser = async (user) => {
 
   try {
 
-    if (!user || !user._id) {
+    if (
+      !user ||
+      !user._id
+    ) {
 
       return {
 
@@ -329,11 +393,8 @@ const syncSingleUser = async (user) => {
 
         message:
           "Invalid user data",
-
       };
-
     }
-
 
     const userData = {
 
@@ -358,14 +419,13 @@ const syncSingleUser = async (user) => {
       role:
         user.role || "user",
 
+      // Login time should be Online
       status:
-        user.status || "Online",
+        "Online",
 
       source:
         "user-project",
-
     };
-
 
     // =================================================
     // INSERT OR UPDATE
@@ -388,9 +448,13 @@ const syncSingleUser = async (user) => {
           new: true,
           upsert: true,
         }
-
       );
 
+    console.log(
+      "USER SYNCED IMMEDIATELY:",
+      user.email,
+      "=> Online"
+    );
 
     return {
 
@@ -401,9 +465,7 @@ const syncSingleUser = async (user) => {
 
       user:
         adminUser,
-
     };
-
 
   } catch (error) {
 
@@ -412,18 +474,14 @@ const syncSingleUser = async (user) => {
       error.message
     );
 
-
     return {
 
       success: false,
 
       message:
         error.message,
-
     };
-
   }
-
 };
 
 
@@ -442,7 +500,6 @@ const getAdminUsers = async () => {
         })
         .lean();
 
-
     return {
 
       success: true,
@@ -451,7 +508,6 @@ const getAdminUsers = async () => {
         users.length,
 
       users,
-
     };
 
   } catch (error) {
@@ -461,18 +517,14 @@ const getAdminUsers = async () => {
       error.message
     );
 
-
     return {
 
       success: false,
 
       message:
         error.message,
-
     };
-
   }
-
 };
 
 
@@ -488,7 +540,6 @@ const getAdminUserById = async (id) => {
       await AdminUser.findById(id)
         .lean();
 
-
     if (!user) {
 
       return {
@@ -497,20 +548,15 @@ const getAdminUserById = async (id) => {
 
         message:
           "User not found",
-
       };
-
     }
-
 
     return {
 
       success: true,
 
       user,
-
     };
-
 
   } catch (error) {
 
@@ -519,18 +565,14 @@ const getAdminUserById = async (id) => {
       error.message
     );
 
-
     return {
 
       success: false,
 
       message:
         error.message,
-
     };
-
   }
-
 };
 
 
