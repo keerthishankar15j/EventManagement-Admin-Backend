@@ -1,8 +1,18 @@
 const axios = require("axios");
 
-const AdminUser =
-  require("../Model/AdminUser");
+const AdminUser = require("../Model/AdminUser");
 
+// =====================================================
+// USER API URL
+// =====================================================
+
+const USER_API_URL =
+  (
+    process.env.USER_API_URL ||
+    "https://event-user-one.vercel.app"
+  )
+    .trim()
+    .replace(/\/+$/, "");
 
 // =====================================================
 // GET USERS FROM USER PROJECT
@@ -10,68 +20,13 @@ const AdminUser =
 
 const getUsersFromUserProject = async () => {
   try {
-
-    // =================================================
-    // GET USER API URL
-    // =================================================
-
-    let USER_API_URL =
-      process.env.USER_API_URL ||
-      "https://event-user-one.vercel.app";
-
-    // Remove spaces
-    USER_API_URL =
-      USER_API_URL.trim();
-
-    // =================================================
-    // FIX URL
-    // =================================================
-
-    // Remove trailing slash
-    USER_API_URL =
-      USER_API_URL.replace(/\/+$/, "");
-
-    // Remove accidental http/https at the end
-    USER_API_URL =
-      USER_API_URL.replace(
-        /https?$/i,
-        ""
-      );
-
-    // Remove duplicate protocol
-    USER_API_URL =
-      USER_API_URL.replace(
-        /^(https?:\/\/)+/i,
-        ""
-      );
-
-    // Add correct protocol
-    USER_API_URL =
-      `https://${USER_API_URL}`;
-
-    // =================================================
-    // FINAL USER API URL
-    // =================================================
-
     const userApiUrl =
       `${USER_API_URL}/login/getusers`;
-
-    console.log(
-      "===================================="
-    );
 
     console.log(
       "USER API URL:",
       userApiUrl
     );
-
-    console.log(
-      "===================================="
-    );
-
-    // =================================================
-    // CALL USER API
-    // =================================================
 
     const response =
       await axios.get(
@@ -91,200 +46,128 @@ const getUsersFromUserProject = async () => {
       response.data
     );
 
-    // =================================================
-    // GET USERS
-    // =================================================
+    if (
+      response.data?.success === false
+    ) {
+      return {
+        success: false,
+        message:
+          response.data.message ||
+          "User API returned an error",
+        users: [],
+      };
+    }
 
     let users = [];
 
-    // Response directly as array
+    // ---------------------------------------------
+    // Direct array
+    // ---------------------------------------------
+
     if (
-      Array.isArray(
-        response.data
-      )
+      Array.isArray(response.data)
     ) {
-
-      users =
-        response.data;
-
+      users = response.data;
     }
 
-    // response.data.users
+    // ---------------------------------------------
+    // { users: [] }
+    // ---------------------------------------------
+
     else if (
       Array.isArray(
         response.data?.users
       )
     ) {
-
       users =
         response.data.users;
-
     }
 
-    // response.data.data
+    // ---------------------------------------------
+    // { data: [] }
+    // ---------------------------------------------
+
     else if (
       Array.isArray(
         response.data?.data
       )
     ) {
-
       users =
         response.data.data;
-
     }
 
-    // response.data.getuserdata
+    // ---------------------------------------------
+    // { getuserdata: [] }
+    // ---------------------------------------------
+
     else if (
       Array.isArray(
         response.data?.getuserdata
       )
     ) {
-
       users =
         response.data.getuserdata;
-
     }
-
-    // =================================================
-    // USER API RETURNED FAILURE
-    // =================================================
-
-    if (
-      response.data?.success === false
-    ) {
-
-      return {
-
-        success: false,
-
-        message:
-          response.data?.message ||
-          "User API returned success:false",
-
-        users: [],
-
-      };
-    }
-
-    // =================================================
-    // NO USERS
-    // =================================================
 
     if (!users.length) {
-
       return {
-
-        success: false,
-
+        success: true,
         message:
-          "User API connected successfully, but no users were found",
-
+          "No users found in User DB",
         users: [],
-
       };
     }
 
-    // =================================================
-    // SUCCESS
-    // =================================================
-
     return {
-
       success: true,
-
       message:
-        "Users fetched successfully from User API",
-
+        "Users fetched from User DB",
       users,
-
     };
 
   } catch (error) {
-
     console.error(
-      "===================================="
-    );
-
-    console.error(
-      "GET USER API ERROR"
-    );
-
-    console.error(
-      "MESSAGE:",
+      "GET USER API ERROR:",
       error.message
     );
 
     if (error.response) {
-
       console.error(
-        "STATUS:",
+        "USER API STATUS:",
         error.response.status
       );
 
       console.error(
-        "DATA:",
+        "USER API DATA:",
         error.response.data
       );
-
     }
 
-    console.error(
-      "===================================="
-    );
-
     return {
-
       success: false,
-
       message:
         error.response?.data?.message ||
         error.message,
-
       users: [],
-
     };
   }
 };
 
 
 // =====================================================
-// SYNC ALL USERS
+// SAVE USERS INTO ADMIN DB
 // =====================================================
 
 const syncUsers = async () => {
-
   try {
-
     console.log(
-      "===================================="
+      "SYNC USERS STARTED"
     );
-
-    console.log(
-      "SYNC ALL USERS STARTED"
-    );
-
-    console.log(
-      "===================================="
-    );
-
-    // =================================================
-    // GET USERS FROM USER PROJECT
-    // =================================================
 
     const result =
       await getUsersFromUserProject();
 
-    // =================================================
-    // USER API ERROR
-    // =================================================
-
     if (!result.success) {
-
-      console.error(
-        "USER API SYNC FAILED:",
-        result.message
-      );
-
       return result;
     }
 
@@ -296,37 +179,19 @@ const syncUsers = async () => {
     let skipped = 0;
 
     // =================================================
-    // LOOP USERS
+    // STORE EACH USER
     // =================================================
 
-    for (
-      const user of users
-    ) {
-
-      // =================================================
-      // INVALID USER
-      // =================================================
-
+    for (const user of users) {
       if (
         !user ||
         !user._id
       ) {
-
         skipped++;
-
-        console.log(
-          "Skipping user: _id missing"
-        );
-
         continue;
       }
 
-      // =================================================
-      // USER DATA
-      // =================================================
-
       const userData = {
-
         sourceUserId:
           user._id,
 
@@ -353,12 +218,7 @@ const syncUsers = async () => {
 
         source:
           "user-project",
-
       };
-
-      // =================================================
-      // FIND EXISTING USER
-      // =================================================
 
       const existingUser =
         await AdminUser.findOne({
@@ -366,142 +226,76 @@ const syncUsers = async () => {
             user._id,
         });
 
-      // =================================================
-      // UPDATE USER
-      // =================================================
-
       if (existingUser) {
-
         await AdminUser.updateOne(
-
           {
             sourceUserId:
               user._id,
           },
-
           {
-            $set:
-              userData,
+            $set: userData,
           }
-
         );
 
         updated++;
-
-        console.log(
-          "Updated user:",
-          user.email
-        );
-
-      }
-
-      // =================================================
-      // INSERT USER
-      // =================================================
-
-      else {
-
+      } else {
         await AdminUser.create(
           userData
         );
 
         inserted++;
-
-        console.log(
-          "Inserted user:",
-          user.email
-        );
-
       }
     }
 
-    // =================================================
-    // SYNC SUCCESS
-    // =================================================
-
     console.log(
-      "===================================="
-    );
-
-    console.log(
-      "SYNC ALL USERS COMPLETED"
-    );
-
-    console.log(
-      "===================================="
+      "SYNC USERS COMPLETED"
     );
 
     return {
-
       success: true,
-
       message:
-        "Users synchronized successfully",
-
+        "Users synced successfully",
       total:
         users.length,
-
       inserted,
-
       updated,
-
       skipped,
-
     };
 
   } catch (error) {
-
     console.error(
       "SYNC USERS ERROR:",
       error.message
     );
 
     return {
-
       success: false,
-
       message:
         error.message,
-
     };
   }
 };
 
 
 // =====================================================
-// SYNC SINGLE USER IMMEDIATELY
+// SYNC ONE USER
 // =====================================================
 
 const syncSingleUser =
   async (user) => {
-
     try {
-
-      // =================================================
-      // VALIDATE USER
-      // =================================================
-
       if (
         !user ||
         !user._id
       ) {
-
         return {
-
           success: false,
-
           message:
             "Invalid user data",
-
         };
       }
 
-      // =================================================
-      // USER DATA
-      // =================================================
-
       const userData = {
-
         sourceUserId:
           user._id,
 
@@ -523,102 +317,142 @@ const syncSingleUser =
         role:
           user.role || "user",
 
-        // Login user = Online
         status:
-          "Online",
+          user.status || "Offline",
 
         source:
           "user-project",
-
       };
-
-      // =================================================
-      // INSERT OR UPDATE
-      // =================================================
 
       const adminUser =
         await AdminUser.findOneAndUpdate(
-
           {
             sourceUserId:
               user._id,
           },
-
           {
-            $set:
-              userData,
+            $set: userData,
           },
-
           {
             new: true,
-
             upsert: true,
           }
-
         );
 
-      console.log(
-        "===================================="
-      );
-
-      console.log(
-        "USER SYNCED IMMEDIATELY"
-      );
-
-      console.log(
-        "EMAIL:",
-        user.email
-      );
-
-      console.log(
-        "STATUS: Online"
-      );
-
-      console.log(
-        "===================================="
-      );
-
       return {
-
         success: true,
-
         message:
-          "User synchronized immediately",
-
+          "User stored in Admin DB",
         user:
           adminUser,
-
       };
 
     } catch (error) {
-
       console.error(
         "SYNC SINGLE USER ERROR:",
         error.message
       );
 
       return {
-
         success: false,
-
         message:
           error.message,
-
       };
     }
   };
 
 
 // =====================================================
-// GET ALL ADMIN USERS
+// GET ADMIN USERS
+// =====================================================
+//
+// IMPORTANT:
+// Every time Admin frontend calls /admin/users,
+// latest users are fetched from User DB first,
+// then stored in Admin DB,
+// then returned to frontend.
+//
+// No separate Sync button required.
 // =====================================================
 
 const getAdminUsers =
   async () => {
-
     try {
+      // -----------------------------------------------
+      // 1. Get latest users from User DB
+      // -----------------------------------------------
+
+      const result =
+        await getUsersFromUserProject();
+
+      if (!result.success) {
+        return result;
+      }
 
       const users =
+        result.users;
+
+      // -----------------------------------------------
+      // 2. Store / update Admin DB
+      // -----------------------------------------------
+
+      for (const user of users) {
+        if (
+          !user ||
+          !user._id
+        ) {
+          continue;
+        }
+
+        const userData = {
+          sourceUserId:
+            user._id,
+
+          name:
+            user.name || "",
+
+          email:
+            user.email || "",
+
+          phone:
+            user.phone || "",
+
+          bio:
+            user.bio || "",
+
+          profileImage:
+            user.profileImage || "",
+
+          role:
+            user.role || "user",
+
+          status:
+            user.status || "Offline",
+
+          source:
+            "user-project",
+        };
+
+        await AdminUser.findOneAndUpdate(
+          {
+            sourceUserId:
+              user._id,
+          },
+          {
+            $set: userData,
+          },
+          {
+            new: true,
+            upsert: true,
+          }
+        );
+      }
+
+      // -----------------------------------------------
+      // 3. Read from Admin DB
+      // -----------------------------------------------
+
+      const adminUsers =
         await AdminUser.find()
           .sort({
             createdAt: -1,
@@ -626,30 +460,23 @@ const getAdminUsers =
           .lean();
 
       return {
-
         success: true,
-
         count:
-          users.length,
-
-        users,
-
+          adminUsers.length,
+        users:
+          adminUsers,
       };
 
     } catch (error) {
-
       console.error(
         "GET ADMIN USERS ERROR:",
         error.message
       );
 
       return {
-
         success: false,
-
         message:
           error.message,
-
       };
     }
   };
@@ -661,47 +488,34 @@ const getAdminUsers =
 
 const getAdminUserById =
   async (id) => {
-
     try {
-
       const user =
         await AdminUser.findById(id)
           .lean();
 
       if (!user) {
-
         return {
-
           success: false,
-
           message:
             "User not found",
-
         };
       }
 
       return {
-
         success: true,
-
         user,
-
       };
 
     } catch (error) {
-
       console.error(
         "GET USER BY ID ERROR:",
         error.message
       );
 
       return {
-
         success: false,
-
         message:
           error.message,
-
       };
     }
   };
@@ -712,13 +526,8 @@ const getAdminUserById =
 // =====================================================
 
 module.exports = {
-
   syncUsers,
-
   syncSingleUser,
-
   getAdminUsers,
-
   getAdminUserById,
-
 };

@@ -24,11 +24,12 @@ const LoginEmailRouter =
 // APP
 // =====================================================
 
-const app = express();
+const app =
+  express();
 
 
 // =====================================================
-// MIDDLEWARE
+// CORS
 // =====================================================
 
 app.use(
@@ -37,62 +38,77 @@ app.use(
   })
 );
 
-app.use(express.json());
+
+// =====================================================
+// BODY
+// =====================================================
+
+app.use(
+  express.json({
+    limit: "10mb",
+  })
+);
 
 app.use(
   express.urlencoded({
     extended: true,
+    limit: "10mb",
   })
 );
 
 
 // =====================================================
-// STATIC UPLOADS
+// UPLOADS
 // =====================================================
 
 const uploadFolder =
-  path.join(__dirname, "uploads");
+  path.join(
+    __dirname,
+    "uploads"
+  );
 
 app.use(
   "/uploads",
-  express.static(uploadFolder)
+  express.static(
+    uploadFolder
+  )
 );
 
 
 // =====================================================
-// MONGODB CONNECTION
+// MONGODB
 // =====================================================
 
 let isConnected = false;
 
-const connectDB = async () => {
+const connectDB =
+  async () => {
 
-  if (
-    isConnected &&
-    mongoose.connection.readyState === 1
-  ) {
-    return;
-  }
+    if (
+      isConnected &&
+      mongoose.connection.readyState === 1
+    ) {
+      return;
+    }
 
-  if (!process.env.MONGO_URI) {
+    if (
+      !process.env.MONGO_URI
+    ) {
+      throw new Error(
+        "MONGO_URI is not defined"
+      );
+    }
 
-    throw new Error(
-      "MONGO_URI is not defined"
+    await mongoose.connect(
+      process.env.MONGO_URI
     );
 
-  }
+    isConnected = true;
 
-  await mongoose.connect(
-    process.env.MONGO_URI
-  );
-
-  isConnected = true;
-
-  console.log(
-    "MongoDB connected"
-  );
-
-};
+    console.log(
+      "MongoDB connected"
+    );
+  };
 
 
 // =====================================================
@@ -108,35 +124,22 @@ app.get(
       await connectDB();
 
       res.status(200).json({
-
         success: true,
-
         message:
           "Admin API is working!",
-
         database:
           "Connected",
-
       });
 
     } catch (error) {
 
-      console.error(
-        "ROOT DB ERROR:",
-        error
-      );
-
       res.status(500).json({
-
         success: false,
-
         message:
           error.message,
-
       });
 
     }
-
   }
 );
 
@@ -163,29 +166,24 @@ app.use(
 
       console.error(
         "ADMIN DATABASE ERROR:",
-        error
+        error.message
       );
 
       res.status(500).json({
-
         success: false,
-
         message:
           "Database connection failed",
-
         error:
           error.message,
-
       });
 
     }
-
   }
 );
 
 
 // =====================================================
-// ADMIN USER ROUTES
+// ADMIN USERS
 // =====================================================
 
 app.use(
@@ -195,7 +193,7 @@ app.use(
 
 
 // =====================================================
-// LOGIN EMAIL ROUTES
+// LOGIN EMAIL
 // =====================================================
 
 app.use(
@@ -205,7 +203,7 @@ app.use(
 
 
 // =====================================================
-// EVENT DATABASE MIDDLEWARE
+// EVENTS
 // =====================================================
 
 app.use(
@@ -224,32 +222,15 @@ app.use(
 
     } catch (error) {
 
-      console.error(
-        "DATABASE CONNECTION ERROR:",
-        error
-      );
-
       res.status(500).json({
-
         success: false,
-
         message:
           "Database connection failed",
-
-        error:
-          error.message,
-
       });
 
     }
-
   }
 );
-
-
-// =====================================================
-// EVENT ROUTES
-// =====================================================
 
 app.use(
   "/events",
@@ -266,12 +247,9 @@ app.get(
   (req, res) => {
 
     res.json({
-
       success: true,
-
       message:
         "EVENT ROUTE WORKING",
-
     });
 
   }

@@ -10,180 +10,156 @@ const {
 // SYNC ALL USERS
 // =====================================================
 
-const syncUsersController = async (req, res) => {
+const syncUsersController =
+  async (req, res) => {
+    try {
+      const result =
+        await syncUsers();
 
-  try {
+      if (result.success) {
+        return res
+          .status(200)
+          .json(result);
+      }
 
-    const result =
-      await syncUsers();
+      return res
+        .status(400)
+        .json(result);
 
+    } catch (error) {
+      console.error(
+        "SYNC USERS CONTROLLER ERROR:",
+        error.message
+      );
 
-    if (result.success) {
-
-      return res.status(200).json(result);
-
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message:
+            error.message,
+        });
     }
-
-
-    return res.status(400).json(result);
-
-
-  } catch (error) {
-
-    console.error(
-      "SYNC USERS CONTROLLER ERROR:",
-      error.message
-    );
-
-
-    return res.status(500).json({
-
-      success: false,
-
-      message:
-        error.message,
-
-    });
-
-  }
-
-};
+  };
 
 
 // =====================================================
-// SYNC SINGLE USER IMMEDIATELY
+// SYNC SINGLE USER
 // =====================================================
 
-const syncSingleUserController = async (req, res) => {
+const syncSingleUserController =
+  async (req, res) => {
+    try {
+      const result =
+        await syncSingleUser(
+          req.body
+        );
 
-  try {
+      if (result.success) {
+        return res
+          .status(200)
+          .json(result);
+      }
 
-    const result =
-      await syncSingleUser(req.body);
+      return res
+        .status(400)
+        .json(result);
 
+    } catch (error) {
+      console.error(
+        "SYNC SINGLE USER CONTROLLER ERROR:",
+        error.message
+      );
 
-    if (result.success) {
-
-      return res.status(200).json(result);
-
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message:
+            error.message,
+        });
     }
-
-
-    return res.status(400).json(result);
-
-
-  } catch (error) {
-
-    console.error(
-      "SYNC SINGLE USER CONTROLLER ERROR:",
-      error.message
-    );
-
-
-    return res.status(500).json({
-
-      success: false,
-
-      message:
-        error.message,
-
-    });
-
-  }
-
-};
+  };
 
 
 // =====================================================
-// GET ALL ADMIN USERS
+// GET ALL USERS
 // =====================================================
 
-const getAdminUsersController = async (req, res) => {
+const getAdminUsersController =
+  async (req, res) => {
+    try {
+      const result =
+        await getAdminUsers();
 
-  try {
+      if (result.success) {
+        return res
+          .status(200)
+          .json(result);
+      }
 
-    const result =
-      await getAdminUsers();
+      return res
+        .status(400)
+        .json(result);
 
+    } catch (error) {
+      console.error(
+        "GET ADMIN USERS CONTROLLER ERROR:",
+        error.message
+      );
 
-    if (result.success) {
-
-      return res.status(200).json(result);
-
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message:
+            error.message,
+        });
     }
-
-
-    return res.status(400).json(result);
-
-
-  } catch (error) {
-
-    console.error(
-      "GET ADMIN USERS CONTROLLER ERROR:",
-      error.message
-    );
-
-
-    return res.status(500).json({
-
-      success: false,
-
-      message:
-        error.message,
-
-    });
-
-  }
-
-};
+  };
 
 
 // =====================================================
-// GET SINGLE ADMIN USER
+// GET SINGLE USER
 // =====================================================
 
-const getAdminUserByIdController = async (req, res) => {
+const getAdminUserByIdController =
+  async (req, res) => {
+    try {
+      const {
+        id,
+      } = req.params;
 
-  try {
+      const result =
+        await getAdminUserById(
+          id
+        );
 
-    const { id } =
-      req.params;
+      if (result.success) {
+        return res
+          .status(200)
+          .json(result);
+      }
 
+      return res
+        .status(404)
+        .json(result);
 
-    const result =
-      await getAdminUserById(id);
+    } catch (error) {
+      console.error(
+        "GET USER BY ID ERROR:",
+        error.message
+      );
 
-
-    if (result.success) {
-
-      return res.status(200).json(result);
-
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message:
+            error.message,
+        });
     }
-
-
-    return res.status(404).json(result);
-
-
-  } catch (error) {
-
-    console.error(
-      "GET USER BY ID ERROR:",
-      error.message
-    );
-
-
-    return res.status(500).json({
-
-      success: false,
-
-      message:
-        error.message,
-
-    });
-
-  }
-
-};
+  };
 
 
 // =====================================================
@@ -191,13 +167,8 @@ const getAdminUserByIdController = async (req, res) => {
 // =====================================================
 
 module.exports = {
-
   syncUsersController,
-
   syncSingleUserController,
-
   getAdminUsersController,
-
   getAdminUserByIdController,
-
 };
