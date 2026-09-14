@@ -45,7 +45,7 @@ const AdminUserSchema = new mongoose.Schema(
     source: {
       type: String,
       default: "user-project",
-    }
+    },
   },
   {
     timestamps: true,

@@ -5,13 +5,11 @@ const router = express.Router();
 const {
   syncUsers,
   getAdminUsersController,
-} = require(
-  "../Controller/AdminUserController"
-);
-
+  getAdminUserByIdController,
+} = require("../Controller/AdminUserController");
 
 // =====================================================
-// SYNC USERS FROM USER PROJECT
+// SYNC USERS
 // =====================================================
 
 router.post(
@@ -19,9 +17,8 @@ router.post(
   syncUsers
 );
 
-
 // =====================================================
-// GET USERS FROM ADMIN DATABASE
+// GET ALL USERS
 // =====================================================
 
 router.get(
@@ -29,5 +26,13 @@ router.get(
   getAdminUsersController
 );
 
+// =====================================================
+// GET SINGLE USER
+// =====================================================
+
+router.get(
+  "/users/:id",
+  getAdminUserByIdController
+);
 
 module.exports = router;
