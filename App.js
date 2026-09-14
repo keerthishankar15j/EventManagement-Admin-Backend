@@ -1,79 +1,41 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const path = require("path");
-
 require("dotenv").config();
 
-
-const AdminUserRouter =
-  require("./src/router/AdminUserRouter");
-
+const AdminUserRouter = require("./src/Router/AdminUserRouter");
 
 const app = express();
-
 
 // =====================================================
 // CORS
 // =====================================================
 
 const allowedOrigins = [
-
   "http://localhost:5173",
-
   "http://localhost:5174",
 
-  // உங்கள் admin Vercel URL வந்ததும் இங்கே add செய்யவும்
-  // "https://your-admin.vercel.app",
-
+  // Add your deployed frontend URL here
+  // "https://your-admin-frontend.vercel.app",
 ];
-
 
 app.use(
   cors({
-
-    origin: function (
-      origin,
-      callback
-    ) {
-
-      // Postman / Thunder Client
+    origin: function (origin, callback) {
+      // Allow Postman / Thunder Client / server-to-server requests
       if (!origin) {
-
-        return callback(
-          null,
-          true
-        );
-
+        return callback(null, true);
       }
 
-
-      if (
-        allowedOrigins.includes(
-          origin
-        )
-      ) {
-
-        return callback(
-          null,
-          true
-        );
-
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
 
-
-      console.log(
-        "CORS blocked:",
-        origin
-      );
-
+      console.log("CORS blocked:", origin);
 
       return callback(
-        new Error(
-          "Not allowed by CORS"
-        )
+        new Error("Not allowed by CORS")
       );
-
     },
 
     credentials: true,
@@ -91,10 +53,8 @@ app.use(
       "Content-Type",
       "Authorization",
     ],
-
   })
 );
-
 
 // =====================================================
 // BODY PARSER
@@ -106,7 +66,6 @@ app.use(
   })
 );
 
-
 app.use(
   express.urlencoded({
     extended: true,
@@ -114,95 +73,58 @@ app.use(
   })
 );
 
-
 // =====================================================
-// MONGODB
+// MONGODB CONNECTION
 // =====================================================
 
 const connectDB = async () => {
-
   try {
-
-    if (
-      mongoose.connection.readyState === 1
-    ) {
-
+    // Already connected
+    if (mongoose.connection.readyState === 1) {
       return;
-
     }
 
-
-    const MONGO_URI =
-      process.env.MONGO_URI;
-
+    const MONGO_URI = process.env.MONGO_URI;
 
     if (!MONGO_URI) {
-
       throw new Error(
         "MONGO_URI is not defined"
       );
-
     }
 
-
-    await mongoose.connect(
-      MONGO_URI,
-      {
-        serverSelectionTimeoutMS: 10000,
-      }
-    );
-
+    await mongoose.connect(MONGO_URI, {
+      serverSelectionTimeoutMS: 10000,
+    });
 
     console.log(
       "Admin MongoDB connected successfully"
     );
-
   } catch (error) {
-
     console.error(
       "MongoDB Error:",
       error.message
     );
 
     throw error;
-
   }
 };
-
 
 // =====================================================
 // DATABASE MIDDLEWARE
 // =====================================================
 
-app.use(
-  async (
-    req,
-    res,
-    next
-  ) => {
-
-    try {
-
-      await connectDB();
-
-      next();
-
-    } catch (error) {
-
-      return res.status(500).json({
-
-        success: false,
-
-        message:
-          "Database connection failed",
-
-      });
-
-    }
-
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+      error: error.message,
+    });
   }
-);
-
+});
 
 // =====================================================
 // ADMIN USER ROUTES
@@ -213,73 +135,46 @@ app.use(
   AdminUserRouter
 );
 
-
 // =====================================================
-// HOME
-// =====================================================
-
-app.get(
-  "/",
-  (req, res) => {
-
-    res.status(200).json({
-
-      success: true,
-
-      message:
-        "Event Management Admin Backend is running",
-
-    });
-
-  }
-);
-
-
-// =====================================================
-// 404
+// HOME ROUTE
 // =====================================================
 
-app.use(
-  (req, res) => {
-
-    res.status(404).json({
-
-      success: false,
-
-      message: "Route not found",
-
-      path: req.originalUrl,
-
-    });
-
-  }
-);
-
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message:
+      "Event Management Admin Backend is running",
+  });
+});
 
 // =====================================================
-// SERVER
+// 404 ROUTE
 // =====================================================
 
-if (
-  require.main === module
-) {
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.originalUrl,
+  });
+});
 
-  const PORT =
-    process.env.PORT || 3000;
+// =====================================================
+// LOCAL SERVER
+// =====================================================
 
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
 
-  app.listen(
-    PORT,
-    () => {
-
-      console.log(
-        `Admin Server running on port ${PORT}`
-      );
-
-    }
-  );
-
+  app.listen(PORT, () => {
+    console.log(
+      `Admin Server running on port ${PORT}`
+    );
+  });
 }
 
+// =====================================================
+// EXPORT APP
+// =====================================================
 
 module.exports = app;
