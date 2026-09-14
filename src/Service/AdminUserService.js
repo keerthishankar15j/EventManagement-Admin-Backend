@@ -3,26 +3,58 @@ const axios = require("axios");
 const AdminUser =
   require("../Model/AdminUser");
 
+
 // =====================================================
 // GET USERS FROM USER PROJECT
 // =====================================================
 
 const getUsersFromUserProject = async () => {
   try {
-    const USER_API_URL =
-      process.env.USER_API_URL;
 
-    if (!USER_API_URL) {
-      throw new Error(
-        "USER_API_URL is not defined in Admin backend environment variables"
+    // =================================================
+    // GET USER API URL
+    // =================================================
+
+    let USER_API_URL =
+      process.env.USER_API_URL ||
+      "https://event-user-one.vercel.app";
+
+    // Remove spaces
+    USER_API_URL =
+      USER_API_URL.trim();
+
+    // =================================================
+    // FIX URL
+    // =================================================
+
+    // Remove trailing slash
+    USER_API_URL =
+      USER_API_URL.replace(/\/+$/, "");
+
+    // Remove accidental http/https at the end
+    USER_API_URL =
+      USER_API_URL.replace(
+        /https?$/i,
+        ""
       );
-    }
 
-    const cleanUrl =
-      USER_API_URL.replace(/\/$/, "");
+    // Remove duplicate protocol
+    USER_API_URL =
+      USER_API_URL.replace(
+        /^(https?:\/\/)+/i,
+        ""
+      );
+
+    // Add correct protocol
+    USER_API_URL =
+      `https://${USER_API_URL}`;
+
+    // =================================================
+    // FINAL USER API URL
+    // =================================================
 
     const userApiUrl =
-      `${cleanUrl}/login/getusers`;
+      `${USER_API_URL}/login/getusers`;
 
     console.log(
       "===================================="
@@ -36,6 +68,10 @@ const getUsersFromUserProject = async () => {
     console.log(
       "===================================="
     );
+
+    // =================================================
+    // CALL USER API
+    // =================================================
 
     const response =
       await axios.get(
@@ -55,73 +91,78 @@ const getUsersFromUserProject = async () => {
       response.data
     );
 
+    // =================================================
+    // GET USERS
+    // =================================================
+
     let users = [];
 
-    // =================================================
-    // RESPONSE IS ARRAY
-    // =================================================
-
+    // Response directly as array
     if (
       Array.isArray(
         response.data
       )
     ) {
+
       users =
         response.data;
+
     }
 
-    // =================================================
     // response.data.users
-    // =================================================
-
     else if (
       Array.isArray(
         response.data?.users
       )
     ) {
+
       users =
         response.data.users;
+
     }
 
-    // =================================================
     // response.data.data
-    // =================================================
-
     else if (
       Array.isArray(
         response.data?.data
       )
     ) {
+
       users =
         response.data.data;
+
     }
 
-    // =================================================
     // response.data.getuserdata
-    // =================================================
-
     else if (
       Array.isArray(
         response.data?.getuserdata
       )
     ) {
+
       users =
         response.data.getuserdata;
+
     }
 
     // =================================================
-    // USER API RETURNED ERROR
+    // USER API RETURNED FAILURE
     // =================================================
 
     if (
       response.data?.success === false
     ) {
+
       return {
+
         success: false,
+
         message:
           response.data?.message ||
           "User API returned success:false",
+
         users: [],
+
       };
     }
 
@@ -130,11 +171,16 @@ const getUsersFromUserProject = async () => {
     // =================================================
 
     if (!users.length) {
+
       return {
+
         success: false,
+
         message:
           "User API connected successfully, but no users were found",
+
         users: [],
+
       };
     }
 
@@ -143,10 +189,14 @@ const getUsersFromUserProject = async () => {
     // =================================================
 
     return {
+
       success: true,
+
       message:
-        "Users fetched from User API",
+        "Users fetched successfully from User API",
+
       users,
+
     };
 
   } catch (error) {
@@ -183,6 +233,7 @@ const getUsersFromUserProject = async () => {
     );
 
     return {
+
       success: false,
 
       message:
@@ -190,6 +241,7 @@ const getUsersFromUserProject = async () => {
         error.message,
 
       users: [],
+
     };
   }
 };
@@ -200,17 +252,30 @@ const getUsersFromUserProject = async () => {
 // =====================================================
 
 const syncUsers = async () => {
+
   try {
+
+    console.log(
+      "===================================="
+    );
 
     console.log(
       "SYNC ALL USERS STARTED"
     );
 
+    console.log(
+      "===================================="
+    );
+
+    // =================================================
+    // GET USERS FROM USER PROJECT
+    // =================================================
+
     const result =
       await getUsersFromUserProject();
 
     // =================================================
-    // USER API FAILED
+    // USER API ERROR
     // =================================================
 
     if (!result.success) {
@@ -234,18 +299,31 @@ const syncUsers = async () => {
     // LOOP USERS
     // =================================================
 
-    for (const user of users) {
+    for (
+      const user of users
+    ) {
 
-      if (!user || !user._id) {
+      // =================================================
+      // INVALID USER
+      // =================================================
+
+      if (
+        !user ||
+        !user._id
+      ) {
 
         skipped++;
 
         console.log(
-          "Skipping user because _id is missing"
+          "Skipping user: _id missing"
         );
 
         continue;
       }
+
+      // =================================================
+      // USER DATA
+      // =================================================
 
       const userData = {
 
@@ -275,6 +353,7 @@ const syncUsers = async () => {
 
         source:
           "user-project",
+
       };
 
       // =================================================
@@ -288,20 +367,23 @@ const syncUsers = async () => {
         });
 
       // =================================================
-      // UPDATE
+      // UPDATE USER
       // =================================================
 
       if (existingUser) {
 
         await AdminUser.updateOne(
+
           {
             sourceUserId:
               user._id,
           },
+
           {
             $set:
               userData,
           }
+
         );
 
         updated++;
@@ -310,10 +392,11 @@ const syncUsers = async () => {
           "Updated user:",
           user.email
         );
+
       }
 
       // =================================================
-      // INSERT
+      // INSERT USER
       // =================================================
 
       else {
@@ -328,15 +411,24 @@ const syncUsers = async () => {
           "Inserted user:",
           user.email
         );
+
       }
     }
 
     // =================================================
-    // SUCCESS
+    // SYNC SUCCESS
     // =================================================
 
     console.log(
+      "===================================="
+    );
+
+    console.log(
       "SYNC ALL USERS COMPLETED"
+    );
+
+    console.log(
+      "===================================="
     );
 
     return {
@@ -354,6 +446,7 @@ const syncUsers = async () => {
       updated,
 
       skipped,
+
     };
 
   } catch (error) {
@@ -369,6 +462,7 @@ const syncUsers = async () => {
 
       message:
         error.message,
+
     };
   }
 };
@@ -378,202 +472,239 @@ const syncUsers = async () => {
 // SYNC SINGLE USER IMMEDIATELY
 // =====================================================
 
-const syncSingleUser = async (user) => {
+const syncSingleUser =
+  async (user) => {
 
-  try {
+    try {
 
-    if (
-      !user ||
-      !user._id
-    ) {
+      // =================================================
+      // VALIDATE USER
+      // =================================================
+
+      if (
+        !user ||
+        !user._id
+      ) {
+
+        return {
+
+          success: false,
+
+          message:
+            "Invalid user data",
+
+        };
+      }
+
+      // =================================================
+      // USER DATA
+      // =================================================
+
+      const userData = {
+
+        sourceUserId:
+          user._id,
+
+        name:
+          user.name || "",
+
+        email:
+          user.email || "",
+
+        phone:
+          user.phone || "",
+
+        bio:
+          user.bio || "",
+
+        profileImage:
+          user.profileImage || "",
+
+        role:
+          user.role || "user",
+
+        // Login user = Online
+        status:
+          "Online",
+
+        source:
+          "user-project",
+
+      };
+
+      // =================================================
+      // INSERT OR UPDATE
+      // =================================================
+
+      const adminUser =
+        await AdminUser.findOneAndUpdate(
+
+          {
+            sourceUserId:
+              user._id,
+          },
+
+          {
+            $set:
+              userData,
+          },
+
+          {
+            new: true,
+
+            upsert: true,
+          }
+
+        );
+
+      console.log(
+        "===================================="
+      );
+
+      console.log(
+        "USER SYNCED IMMEDIATELY"
+      );
+
+      console.log(
+        "EMAIL:",
+        user.email
+      );
+
+      console.log(
+        "STATUS: Online"
+      );
+
+      console.log(
+        "===================================="
+      );
+
+      return {
+
+        success: true,
+
+        message:
+          "User synchronized immediately",
+
+        user:
+          adminUser,
+
+      };
+
+    } catch (error) {
+
+      console.error(
+        "SYNC SINGLE USER ERROR:",
+        error.message
+      );
 
       return {
 
         success: false,
 
         message:
-          "Invalid user data",
+          error.message,
+
       };
     }
-
-    const userData = {
-
-      sourceUserId:
-        user._id,
-
-      name:
-        user.name || "",
-
-      email:
-        user.email || "",
-
-      phone:
-        user.phone || "",
-
-      bio:
-        user.bio || "",
-
-      profileImage:
-        user.profileImage || "",
-
-      role:
-        user.role || "user",
-
-      // Login time should be Online
-      status:
-        "Online",
-
-      source:
-        "user-project",
-    };
-
-    // =================================================
-    // INSERT OR UPDATE
-    // =================================================
-
-    const adminUser =
-      await AdminUser.findOneAndUpdate(
-
-        {
-          sourceUserId:
-            user._id,
-        },
-
-        {
-          $set:
-            userData,
-        },
-
-        {
-          new: true,
-          upsert: true,
-        }
-      );
-
-    console.log(
-      "USER SYNCED IMMEDIATELY:",
-      user.email,
-      "=> Online"
-    );
-
-    return {
-
-      success: true,
-
-      message:
-        "User synchronized immediately",
-
-      user:
-        adminUser,
-    };
-
-  } catch (error) {
-
-    console.error(
-      "SYNC SINGLE USER ERROR:",
-      error.message
-    );
-
-    return {
-
-      success: false,
-
-      message:
-        error.message,
-    };
-  }
-};
+  };
 
 
 // =====================================================
 // GET ALL ADMIN USERS
 // =====================================================
 
-const getAdminUsers = async () => {
+const getAdminUsers =
+  async () => {
 
-  try {
+    try {
 
-    const users =
-      await AdminUser.find()
-        .sort({
-          createdAt: -1,
-        })
-        .lean();
+      const users =
+        await AdminUser.find()
+          .sort({
+            createdAt: -1,
+          })
+          .lean();
 
-    return {
+      return {
 
-      success: true,
+        success: true,
 
-      count:
-        users.length,
+        count:
+          users.length,
 
-      users,
-    };
+        users,
 
-  } catch (error) {
+      };
 
-    console.error(
-      "GET ADMIN USERS ERROR:",
-      error.message
-    );
+    } catch (error) {
 
-    return {
-
-      success: false,
-
-      message:
-        error.message,
-    };
-  }
-};
-
-
-// =====================================================
-// GET SINGLE ADMIN USER
-// =====================================================
-
-const getAdminUserById = async (id) => {
-
-  try {
-
-    const user =
-      await AdminUser.findById(id)
-        .lean();
-
-    if (!user) {
+      console.error(
+        "GET ADMIN USERS ERROR:",
+        error.message
+      );
 
       return {
 
         success: false,
 
         message:
-          "User not found",
+          error.message,
+
       };
     }
+  };
 
-    return {
 
-      success: true,
+// =====================================================
+// GET SINGLE ADMIN USER
+// =====================================================
 
-      user,
-    };
+const getAdminUserById =
+  async (id) => {
 
-  } catch (error) {
+    try {
 
-    console.error(
-      "GET USER BY ID ERROR:",
-      error.message
-    );
+      const user =
+        await AdminUser.findById(id)
+          .lean();
 
-    return {
+      if (!user) {
 
-      success: false,
+        return {
 
-      message:
-        error.message,
-    };
-  }
-};
+          success: false,
+
+          message:
+            "User not found",
+
+        };
+      }
+
+      return {
+
+        success: true,
+
+        user,
+
+      };
+
+    } catch (error) {
+
+      console.error(
+        "GET USER BY ID ERROR:",
+        error.message
+      );
+
+      return {
+
+        success: false,
+
+        message:
+          error.message,
+
+      };
+    }
+  };
 
 
 // =====================================================
