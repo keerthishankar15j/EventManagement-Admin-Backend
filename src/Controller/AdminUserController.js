@@ -4,22 +4,28 @@ const {
   getAdminUserById,
 } = require("../Service/AdminUserService");
 
-// =====================================================
+
+// ==========================================
 // SYNC USERS
-// =====================================================
+// ==========================================
 
 const syncUsers = async (req, res) => {
   try {
+
     const result =
       await syncUsersFromUserProject();
 
     if (result.success) {
+
       return res.status(200).json(result);
     }
 
-    return res.status(400).json(result);
+    return res.status(
+      result.status === 404 ? 404 : 400
+    ).json(result);
 
   } catch (error) {
+
     console.error(
       "Sync Users Controller Error:",
       error
@@ -32,25 +38,26 @@ const syncUsers = async (req, res) => {
   }
 };
 
-// =====================================================
-// GET ALL USERS
-// =====================================================
 
-const getAdminUsersController = async (
-  req,
-  res
-) => {
+// ==========================================
+// GET ALL USERS
+// ==========================================
+
+const getAdminUsersController = async (req, res) => {
   try {
+
     const result =
       await getAdminUsers();
 
     if (result.success) {
+
       return res.status(200).json(result);
     }
 
     return res.status(400).json(result);
 
   } catch (error) {
+
     console.error(
       "Get Admin Users Controller Error:",
       error
@@ -63,29 +70,30 @@ const getAdminUsersController = async (
   }
 };
 
-// =====================================================
-// GET SINGLE USER
-// =====================================================
 
-const getAdminUserByIdController = async (
-  req,
-  res
-) => {
+// ==========================================
+// GET USER BY ID
+// ==========================================
+
+const getAdminUserByIdController = async (req, res) => {
   try {
+
+    const { id } = req.params;
+
     const result =
-      await getAdminUserById(
-        req.params.id
-      );
+      await getAdminUserById(id);
 
     if (result.success) {
+
       return res.status(200).json(result);
     }
 
-    return res.status(404).json(result);
+    return res.status(400).json(result);
 
   } catch (error) {
+
     console.error(
-      "Get User By ID Controller Error:",
+      "Get Admin User By ID Controller Error:",
       error
     );
 
@@ -96,9 +104,6 @@ const getAdminUserByIdController = async (
   }
 };
 
-// =====================================================
-// EXPORT
-// =====================================================
 
 module.exports = {
   syncUsers,
