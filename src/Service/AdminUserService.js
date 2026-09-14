@@ -1,11 +1,11 @@
 const AdminUser = require("../Model/AdminUser");
 
 
-// =====================================================
+// ======================================================
 // SAVE / UPDATE USER
-// =====================================================
+// ======================================================
 
-const saveUserToAdmin = async (userData) => {
+const syncUser = async (userData) => {
   try {
 
     if (!userData) {
@@ -16,34 +16,31 @@ const saveUserToAdmin = async (userData) => {
     }
 
 
-    if (!userData._id) {
+    if (!userData.sourceUserId) {
       return {
         success: false,
-        message: "User ID is required",
+        message: "sourceUserId is required",
       };
     }
 
 
-    if (!userData.email) {
-      return {
-        success: false,
-        message: "Email is required",
-      };
-    }
-
-
-    const adminUserData = {
+    const data = {
 
       sourceUserId:
-        userData._id,
+        userData.sourceUserId.toString(),
 
       name:
         userData.name || "",
 
       email:
         userData.email
-          .toLowerCase()
-          .trim(),
+          ? userData.email
+              .toLowerCase()
+              .trim()
+          : "",
+
+      role:
+        userData.role || "user",
 
       phone:
         userData.phone || "",
@@ -54,26 +51,30 @@ const saveUserToAdmin = async (userData) => {
       profileImage:
         userData.profileImage || "",
 
-      role:
-        userData.role || "user",
+      joinedAt:
+        userData.joinedAt || null,
+
+      lastLogin:
+        userData.lastLogin || null,
+
+      loginStatus:
+        userData.loginStatus || "offline",
+
+      loginType:
+        userData.loginType || "normal",
     };
 
 
-    // =================================================
-    // UPSERT
-    // =================================================
-
-    const savedUser =
+    const user =
       await AdminUser.findOneAndUpdate(
 
         {
           sourceUserId:
-            userData._id,
+            data.sourceUserId,
         },
 
         {
-          $set:
-            adminUserData,
+          $set: data,
         },
 
         {
@@ -81,96 +82,104 @@ const saveUserToAdmin = async (userData) => {
           upsert: true,
           runValidators: true,
         }
+
       );
 
 
     console.log(
-      "===================================="
-    );
-
-    console.log(
-      "✅ USER SAVED IN ADMIN DB"
-    );
-
-    console.log(
-      "Name:",
-      savedUser.name
-    );
-
-    console.log(
-      "Email:",
-      savedUser.email
-    );
-
-    console.log(
-      "===================================="
+      "✅ USER SAVED IN ADMIN DB:",
+      user.email
     );
 
 
     return {
+
       success: true,
-      message: "User synced successfully",
-      user: savedUser,
+
+      message:
+        "User synced successfully",
+
+      user,
+
     };
 
 
   } catch (error) {
 
     console.error(
-      "SAVE USER SERVICE ERROR:",
+      "❌ ADMIN USER SAVE ERROR:",
       error.message
     );
 
+
     return {
+
       success: false,
-      message: error.message,
+
+      message:
+        error.message,
+
     };
+
   }
 };
 
 
-// =====================================================
-// GET ALL ADMIN USERS
-// =====================================================
+// ======================================================
+// GET ALL USERS
+// ======================================================
 
-const getAllAdminUsers = async () => {
+const getAllUsers = async () => {
+
   try {
 
     const users =
       await AdminUser.find()
         .sort({
+          lastLogin: -1,
           createdAt: -1,
         })
         .lean();
 
 
     return {
+
       success: true,
+
       count: users.length,
+
       users,
+
     };
 
 
   } catch (error) {
 
     console.error(
-      "GET ADMIN USERS ERROR:",
+      "❌ GET USERS ERROR:",
       error.message
     );
 
+
     return {
+
       success: false,
-      message: error.message,
+
+      message:
+        error.message,
+
     };
+
   }
 };
 
 
-// =====================================================
-// GET SINGLE ADMIN USER
-// =====================================================
+// ======================================================
+// GET SINGLE USER
+// ======================================================
 
-const getAdminUserById = async (id) => {
+const getSingleUser = async (id) => {
+
   try {
 
     const user =
@@ -181,40 +190,47 @@ const getAdminUserById = async (id) => {
     if (!user) {
 
       return {
+
         success: false,
-        message: "User not found",
+
+        message:
+          "User not found",
+
       };
 
     }
 
 
     return {
+
       success: true,
+
       user,
+
     };
 
 
   } catch (error) {
 
-    console.error(
-      "GET ADMIN USER ERROR:",
-      error.message
-    );
-
     return {
+
       success: false,
-      message: error.message,
+
+      message:
+        error.message,
+
     };
+
   }
 };
 
 
-// =====================================================
-// EXPORT
-// =====================================================
-
 module.exports = {
-  saveUserToAdmin,
-  getAllAdminUsers,
-  getAdminUserById,
+
+  syncUser,
+
+  getAllUsers,
+
+  getSingleUser,
+
 };

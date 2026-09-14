@@ -2,31 +2,47 @@ const express = require("express");
 
 const router = express.Router();
 
+
 const {
-  receiveUser,
-  getUsers,
-  getUserById,
-} = require("../Controller/AdminUserController");
+
+  syncUserController,
+
+  getUsersController,
+
+  getSingleUserController,
+
+} = require(
+  "../Controller/AdminUserController"
+);
 
 
-// User Backend → Admin Backend
+// ======================================================
+// USER BACKEND → ADMIN
+// ======================================================
+
 router.post(
   "/sync-user",
-  receiveUser
+  syncUserController
 );
 
 
-// Admin Frontend → Admin Backend
+// ======================================================
+// ADMIN FRONTEND → GET ALL USERS
+// ======================================================
+
 router.get(
   "/users",
-  getUsers
+  getUsersController
 );
 
 
-// Admin Frontend → Single User
+// ======================================================
+// ADMIN FRONTEND → GET SINGLE USER
+// ======================================================
+
 router.get(
   "/users/:id",
-  getUserById
+  getSingleUserController
 );
 
 

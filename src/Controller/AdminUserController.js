@@ -1,147 +1,173 @@
 const {
-  saveUserToAdmin,
-  getAllAdminUsers,
-  getAdminUserById,
+
+  syncUser,
+
+  getAllUsers,
+
+  getSingleUser,
+
 } = require("../Service/AdminUserService");
 
 
-// =====================================================
-// RECEIVE USER FROM USER BACKEND
-// =====================================================
+// ======================================================
+// USER BACKEND → ADMIN BACKEND
+// ======================================================
 
-const receiveUser = async (req, res) => {
-  try {
+const syncUserController =
+  async (req, res) => {
 
-    console.log(
-      "===================================="
-    );
+    try {
 
-    console.log(
-      "📥 USER RECEIVED FROM USER BACKEND"
-    );
-
-    console.log(
-      req.body
-    );
-
-    console.log(
-      "===================================="
-    );
-
-
-    const result =
-      await saveUserToAdmin(req.body);
-
-
-    if (!result.success) {
-
-      return res.status(400).json(
-        result
+      console.log(
+        "===================================="
       );
+
+      console.log(
+        "📥 USER RECEIVED"
+      );
+
+      console.log(
+        req.body
+      );
+
+      console.log(
+        "===================================="
+      );
+
+
+      const result =
+        await syncUser(
+          req.body
+        );
+
+
+      if (!result.success) {
+
+        return res
+          .status(400)
+          .json(result);
+
+      }
+
+
+      return res
+        .status(200)
+        .json(result);
+
+
+    } catch (error) {
+
+      console.error(
+        "SYNC CONTROLLER ERROR:",
+        error.message
+      );
+
+
+      return res
+        .status(500)
+        .json({
+
+          success: false,
+
+          message:
+            error.message,
+
+        });
 
     }
 
-
-    return res.status(200).json(
-      result
-    );
+  };
 
 
-  } catch (error) {
-
-    console.error(
-      "RECEIVE USER ERROR:",
-      error.message
-    );
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-
-// =====================================================
+// ======================================================
 // GET ALL USERS
-// =====================================================
+// ======================================================
 
-const getUsers = async (req, res) => {
-  try {
+const getUsersController =
+  async (req, res) => {
 
-    const result =
-      await getAllAdminUsers();
+    try {
+
+      const result =
+        await getAllUsers();
 
 
-    if (!result.success) {
+      return res
+        .status(200)
+        .json(result);
 
-      return res.status(500).json(
-        result
-      );
+
+    } catch (error) {
+
+      return res
+        .status(500)
+        .json({
+
+          success: false,
+
+          message:
+            error.message,
+
+        });
 
     }
 
-
-    return res.status(200).json(
-      result
-    );
+  };
 
 
-  } catch (error) {
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-
-// =====================================================
+// ======================================================
 // GET SINGLE USER
-// =====================================================
+// ======================================================
 
-const getUserById = async (req, res) => {
-  try {
+const getSingleUserController =
+  async (req, res) => {
 
-    const { id } =
-      req.params;
+    try {
+
+      const result =
+        await getSingleUser(
+          req.params.id
+        );
 
 
-    const result =
-      await getAdminUserById(id);
+      if (!result.success) {
+
+        return res
+          .status(404)
+          .json(result);
+
+      }
 
 
-    if (!result.success) {
+      return res
+        .status(200)
+        .json(result);
 
-      return res.status(404).json(
-        result
-      );
+
+    } catch (error) {
+
+      return res
+        .status(500)
+        .json({
+
+          success: false,
+
+          message:
+            error.message,
+
+        });
 
     }
 
+  };
 
-    return res.status(200).json(
-      result
-    );
-
-
-  } catch (error) {
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-
-// =====================================================
-// EXPORT
-// =====================================================
 
 module.exports = {
-  receiveUser,
-  getUsers,
-  getUserById,
+
+  syncUserController,
+
+  getUsersController,
+
+  getSingleUserController,
+
 };
