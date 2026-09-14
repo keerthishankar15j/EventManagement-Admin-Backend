@@ -3,28 +3,23 @@ const mongoose = require("mongoose");
 const AdminUserSchema = new mongoose.Schema(
   {
     sourceUserId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       required: true,
       unique: true,
-      index: true,
     },
 
     name: {
       type: String,
-      default: "",
+      required: true,
       trim: true,
     },
 
     email: {
       type: String,
-      default: "",
+      required: true,
+      unique: true,
       lowercase: true,
       trim: true,
-    },
-
-    role: {
-      type: String,
-      default: "user",
     },
 
     phone: {
@@ -42,28 +37,16 @@ const AdminUserSchema = new mongoose.Schema(
       default: "",
     },
 
-    joinedAt: {
-      type: Date,
-      default: null,
-    },
-
-    lastLogin: {
-      type: Date,
-      default: null,
-    },
-
-    loginStatus: {
+    role: {
       type: String,
-      enum: ["online", "offline", "logout"],
-      default: "offline",
+      default: "user",
     },
 
-    loginType: {
+    source: {
       type: String,
-      default: "normal",
-    },
+      default: "user-project",
+    }
   },
-
   {
     timestamps: true,
   }

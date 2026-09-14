@@ -2,47 +2,31 @@ const express = require("express");
 
 const router = express.Router();
 
-
 const {
-
-  syncUserController,
-
-  getUsersController,
-
-  getSingleUserController,
-
+  syncUsers,
+  getAdminUsersController,
 } = require(
   "../Controller/AdminUserController"
 );
 
 
-// ======================================================
-// USER BACKEND → ADMIN
-// ======================================================
+// =====================================================
+// SYNC USERS FROM USER PROJECT
+// =====================================================
 
 router.post(
-  "/sync-user",
-  syncUserController
+  "/sync-users",
+  syncUsers
 );
 
 
-// ======================================================
-// ADMIN FRONTEND → GET ALL USERS
-// ======================================================
+// =====================================================
+// GET USERS FROM ADMIN DATABASE
+// =====================================================
 
 router.get(
   "/users",
-  getUsersController
-);
-
-
-// ======================================================
-// ADMIN FRONTEND → GET SINGLE USER
-// ======================================================
-
-router.get(
-  "/users/:id",
-  getSingleUserController
+  getAdminUsersController
 );
 
 

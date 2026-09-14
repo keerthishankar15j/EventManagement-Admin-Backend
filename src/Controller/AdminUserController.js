@@ -1,173 +1,91 @@
 const {
-
-  syncUser,
-
-  getAllUsers,
-
-  getSingleUser,
-
+  syncUsersFromUserProject,
+  getAdminUsers,
 } = require("../Service/AdminUserService");
 
 
-// ======================================================
-// USER BACKEND → ADMIN BACKEND
-// ======================================================
+// =====================================================
+// SYNC USERS
+// =====================================================
 
-const syncUserController =
-  async (req, res) => {
+const syncUsers = async (req, res) => {
 
-    try {
+  try {
 
-      console.log(
-        "===================================="
+    const result =
+      await syncUsersFromUserProject();
+
+
+    if (result.success) {
+
+      return res.status(200).json(
+        result
       );
-
-      console.log(
-        "📥 USER RECEIVED"
-      );
-
-      console.log(
-        req.body
-      );
-
-      console.log(
-        "===================================="
-      );
-
-
-      const result =
-        await syncUser(
-          req.body
-        );
-
-
-      if (!result.success) {
-
-        return res
-          .status(400)
-          .json(result);
-
-      }
-
-
-      return res
-        .status(200)
-        .json(result);
-
-
-    } catch (error) {
-
-      console.error(
-        "SYNC CONTROLLER ERROR:",
-        error.message
-      );
-
-
-      return res
-        .status(500)
-        .json({
-
-          success: false,
-
-          message:
-            error.message,
-
-        });
 
     }
 
-  };
+
+    return res.status(400).json(
+      result
+    );
+
+  } catch (error) {
+
+    return res.status(500).json({
+
+      success: false,
+
+      message: error.message,
+
+    });
+
+  }
+};
 
 
-// ======================================================
-// GET ALL USERS
-// ======================================================
+// =====================================================
+// GET ADMIN USERS
+// =====================================================
 
-const getUsersController =
-  async (req, res) => {
+const getAdminUsersController = async (
+  req,
+  res
+) => {
 
-    try {
+  try {
 
-      const result =
-        await getAllUsers();
-
-
-      return res
-        .status(200)
-        .json(result);
+    const result =
+      await getAdminUsers();
 
 
-    } catch (error) {
+    if (result.success) {
 
-      return res
-        .status(500)
-        .json({
-
-          success: false,
-
-          message:
-            error.message,
-
-        });
-
-    }
-
-  };
-
-
-// ======================================================
-// GET SINGLE USER
-// ======================================================
-
-const getSingleUserController =
-  async (req, res) => {
-
-    try {
-
-      const result =
-        await getSingleUser(
-          req.params.id
-        );
-
-
-      if (!result.success) {
-
-        return res
-          .status(404)
-          .json(result);
-
-      }
-
-
-      return res
-        .status(200)
-        .json(result);
-
-
-    } catch (error) {
-
-      return res
-        .status(500)
-        .json({
-
-          success: false,
-
-          message:
-            error.message,
-
-        });
+      return res.status(200).json(
+        result
+      );
 
     }
 
-  };
+
+    return res.status(400).json(
+      result
+    );
+
+  } catch (error) {
+
+    return res.status(500).json({
+
+      success: false,
+
+      message: error.message,
+
+    });
+
+  }
+};
 
 
 module.exports = {
-
-  syncUserController,
-
-  getUsersController,
-
-  getSingleUserController,
-
+  syncUsers,
+  getAdminUsersController,
 };
