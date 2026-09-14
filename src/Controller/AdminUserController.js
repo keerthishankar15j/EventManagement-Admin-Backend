@@ -1,98 +1,57 @@
-const AdminUser = require("../Model/AdminUser");
+const {
+  saveUserToAdmin,
+  getAllAdminUsers,
+  getAdminUserById,
+} = require("../Service/AdminUserService");
 
 
-// ==========================================
+// =====================================================
 // RECEIVE USER FROM USER BACKEND
-// ==========================================
+// =====================================================
 
 const receiveUser = async (req, res) => {
   try {
 
-    const user = req.body;
-
     console.log(
-      "USER RECEIVED FROM USER BACKEND:",
-      user
+      "===================================="
     );
 
-    if (!user._id) {
-      return res.status(400).json({
-        success: false,
-        message: "User ID is required",
-      });
-    }
+    console.log(
+      "📥 USER RECEIVED FROM USER BACKEND"
+    );
 
-    if (!user.email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is required",
-      });
-    }
+    console.log(
+      req.body
+    );
+
+    console.log(
+      "===================================="
+    );
 
 
-    const userData = {
-      sourceUserId: user._id,
-
-      name: user.name || "",
-
-      email: user.email,
-
-      phone: user.phone || "",
-
-      bio: user.bio || "",
-
-      profileImage:
-        user.profileImage || "",
-
-      role:
-        user.role || "user",
-
-      status:
-        user.status || "Offline",
-
-      source:
-        "user-project",
-    };
+    const result =
+      await saveUserToAdmin(req.body);
 
 
-    const savedUser =
-      await AdminUser.findOneAndUpdate(
+    if (!result.success) {
 
-        {
-          sourceUserId: user._id,
-        },
-
-        {
-          $set: userData,
-        },
-
-        {
-          new: true,
-          upsert: true,
-        }
+      return res.status(400).json(
+        result
       );
 
+    }
 
-    console.log(
-      "USER SAVED IN ADMIN DB:",
-      savedUser
+
+    return res.status(200).json(
+      result
     );
 
-
-    return res.status(200).json({
-      success: true,
-
-      message:
-        "User synchronized successfully",
-
-      user: savedUser,
-    });
 
   } catch (error) {
 
     console.error(
       "RECEIVE USER ERROR:",
-      error
+      error.message
     );
 
     return res.status(500).json({
@@ -103,30 +62,30 @@ const receiveUser = async (req, res) => {
 };
 
 
-// ==========================================
+// =====================================================
 // GET ALL USERS
-// ==========================================
+// =====================================================
 
-const getAdminUsers = async (req, res) => {
-
+const getUsers = async (req, res) => {
   try {
 
-    const users =
-      await AdminUser.find()
-        .sort({
-          createdAt: -1,
-        })
-        .lean();
+    const result =
+      await getAllAdminUsers();
 
 
-    return res.status(200).json({
-      success: true,
+    if (!result.success) {
 
-      count:
-        users.length,
+      return res.status(500).json(
+        result
+      );
 
-      users,
-    });
+    }
+
+
+    return res.status(200).json(
+      result
+    );
+
 
   } catch (error) {
 
@@ -138,40 +97,34 @@ const getAdminUsers = async (req, res) => {
 };
 
 
-// ==========================================
+// =====================================================
 // GET SINGLE USER
-// ==========================================
+// =====================================================
 
-const getAdminUserById = async (
-  req,
-  res
-) => {
-
+const getUserById = async (req, res) => {
   try {
 
     const { id } =
       req.params;
 
 
-    const user =
-      await AdminUser.findById(id)
-        .lean();
+    const result =
+      await getAdminUserById(id);
 
 
-    if (!user) {
+    if (!result.success) {
 
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(404).json(
+        result
+      );
 
     }
 
 
-    return res.status(200).json({
-      success: true,
-      user,
-    });
+    return res.status(200).json(
+      result
+    );
+
 
   } catch (error) {
 
@@ -183,8 +136,12 @@ const getAdminUserById = async (
 };
 
 
+// =====================================================
+// EXPORT
+// =====================================================
+
 module.exports = {
   receiveUser,
-  getAdminUsers,
-  getAdminUserById,
+  getUsers,
+  getUserById,
 };

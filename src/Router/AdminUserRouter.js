@@ -4,8 +4,8 @@ const router = express.Router();
 
 const {
   receiveUser,
-  getAdminUsers,
-  getAdminUserById,
+  getUsers,
+  getUserById,
 } = require("../Controller/AdminUserController");
 
 
@@ -19,14 +19,14 @@ router.post(
 // Admin Frontend → Admin Backend
 router.get(
   "/users",
-  getAdminUsers
+  getUsers
 );
 
 
 // Admin Frontend → Single User
 router.get(
   "/users/:id",
-  getAdminUserById
+  getUserById
 );
 
 
