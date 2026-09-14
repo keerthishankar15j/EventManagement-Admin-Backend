@@ -1,34 +1,16 @@
-const express = require("express");
+const express =
+  require("express");
 
 const router =
   express.Router();
 
 const {
-  syncUsersController,
-  syncSingleUserController,
   getAdminUsersController,
   getAdminUserByIdController,
-} = require("../Controller/AdminUserController");
-
-
-// =====================================================
-// SYNC ALL
-// =====================================================
-
-router.post(
-  "/sync-users",
-  syncUsersController
-);
-
-
-// =====================================================
-// SYNC ONE USER
-// =====================================================
-
-router.post(
-  "/sync-user",
-  syncSingleUserController
-);
+} =
+  require(
+    "../Controller/AdminUserController"
+  );
 
 
 // =====================================================
@@ -42,7 +24,7 @@ router.get(
 
 
 // =====================================================
-// GET ONE USER
+// GET SINGLE USER
 // =====================================================
 
 router.get(
@@ -51,4 +33,5 @@ router.get(
 );
 
 
-module.exports = router;
+module.exports =
+  router;

@@ -7,40 +7,125 @@ require("dotenv").config();
 
 
 // =====================================================
-// ROUTERS
+// ROUTES
 // =====================================================
 
-const eventRoutes =
-  require("./src/Router/EventRouter");
+const SignupRouter =
+  require("./src/router/SignupRouter");
 
-const AdminUserRouter =
-  require("./src/Router/AdminUserRouter");
+const LoginRouter =
+  require("./src/router/LoginRouter");
 
-const LoginEmailRouter =
-  require("./src/Router/LoginEmailRouter");
+const LoginHistoryRouter =
+  require("./src/router/LoginHistoryRouter");
+
+const AdminRouter =
+  require("./src/router/AdminRouter");
+
+const EventRouter =
+  require("./src/router/EventRouter");
+
+const ProfileRouter =
+  require("./src/router/ProfileRouter");
+
+const ContactRouter =
+  require("./src/router/ContactRouter");
+
+const OrganizereqRouter =
+  require("./src/router/OrganizereqRouter");
+
+const BookTicketRouter =
+  require("./src/router/BookTicketRouter");
 
 
 // =====================================================
 // APP
 // =====================================================
 
-const app =
-  express();
+const app = express();
 
 
 // =====================================================
 // CORS
 // =====================================================
 
+const allowedOrigins = [
+  "https://event-user-one.vercel.app",
+  "https://eventuser-two.vercel.app",
+  "https://event-admin-one.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
+
+
 app.use(
   cors({
-    origin: "*",
+
+    origin: function (
+      origin,
+      callback
+    ) {
+
+      if (!origin) {
+
+        return callback(
+          null,
+          true
+        );
+
+      }
+
+
+      if (
+        allowedOrigins.includes(
+          origin
+        )
+      ) {
+
+        return callback(
+          null,
+          true
+        );
+
+      }
+
+
+      console.log(
+        "CORS blocked:",
+        origin
+      );
+
+
+      return callback(
+        new Error(
+          "Not allowed by CORS"
+        )
+      );
+
+    },
+
+    credentials: true,
+
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
+
   })
 );
 
 
 // =====================================================
-// BODY
+// BODY PARSER
 // =====================================================
 
 app.use(
@@ -48,6 +133,7 @@ app.use(
     limit: "10mb",
   })
 );
+
 
 app.use(
   express.urlencoded({
@@ -61,195 +147,192 @@ app.use(
 // UPLOADS
 // =====================================================
 
-const uploadFolder =
-  path.join(
-    __dirname,
-    "uploads"
-  );
-
 app.use(
   "/uploads",
   express.static(
-    uploadFolder
+    path.join(
+      __dirname,
+      "uploads"
+    )
   )
 );
 
 
 // =====================================================
-// MONGODB
+// MONGODB CONNECTION
 // =====================================================
 
-let isConnected = false;
+const connectDB = async () => {
 
-const connectDB =
-  async () => {
+  try {
 
     if (
-      isConnected &&
       mongoose.connection.readyState === 1
     ) {
+
       return;
+
     }
 
-    if (
-      !process.env.MONGO_URI
-    ) {
+
+    const MONGO_URI =
+      process.env.MONGO_URI;
+
+
+    if (!MONGO_URI) {
+
       throw new Error(
         "MONGO_URI is not defined"
       );
+
     }
 
+
     await mongoose.connect(
-      process.env.MONGO_URI
+      MONGO_URI,
+      {
+        serverSelectionTimeoutMS: 10000,
+      }
     );
 
-    isConnected = true;
 
     console.log(
-      "MongoDB connected"
+      "MongoDB connected successfully"
     );
-  };
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "MongoDB connection error:",
+      error.message
+    );
+
+    throw error;
+
+  }
+
+};
 
 
 // =====================================================
-// ROOT
+// DATABASE MIDDLEWARE
+// =====================================================
+
+app.use(
+  async (
+    req,
+    res,
+    next
+  ) => {
+
+    try {
+
+      await connectDB();
+
+      next();
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "DATABASE ERROR:",
+        error.message
+      );
+
+
+      return res
+        .status(500)
+        .json({
+
+          success: false,
+
+          message:
+            "Database connection failed",
+
+        });
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// ROUTES
+// =====================================================
+
+app.use(
+  "/signup",
+  SignupRouter
+);
+
+
+app.use(
+  "/login",
+  LoginRouter
+);
+
+
+app.use(
+  "/loginhistory",
+  LoginHistoryRouter
+);
+
+
+app.use(
+  "/admin",
+  AdminRouter
+);
+
+
+app.use(
+  "/events",
+  EventRouter
+);
+
+
+app.use(
+  "/profile",
+  ProfileRouter
+);
+
+
+app.use(
+  "/contact",
+  ContactRouter
+);
+
+
+app.use(
+  "/organizer-requests",
+  OrganizereqRouter
+);
+
+
+app.use(
+  "/booking",
+  BookTicketRouter
+);
+
+
+// =====================================================
+// ROOT TEST
 // =====================================================
 
 app.get(
   "/",
-  async (req, res) => {
-
-    try {
-
-      await connectDB();
-
-      res.status(200).json({
-        success: true,
-        message:
-          "Admin API is working!",
-        database:
-          "Connected",
-      });
-
-    } catch (error) {
-
-      res.status(500).json({
-        success: false,
-        message:
-          error.message,
-      });
-
-    }
-  }
-);
-
-
-// =====================================================
-// ADMIN DATABASE MIDDLEWARE
-// =====================================================
-
-app.use(
-  "/admin",
-  async (
-    req,
-    res,
-    next
-  ) => {
-
-    try {
-
-      await connectDB();
-
-      next();
-
-    } catch (error) {
-
-      console.error(
-        "ADMIN DATABASE ERROR:",
-        error.message
-      );
-
-      res.status(500).json({
-        success: false,
-        message:
-          "Database connection failed",
-        error:
-          error.message,
-      });
-
-    }
-  }
-);
-
-
-// =====================================================
-// ADMIN USERS
-// =====================================================
-
-app.use(
-  "/admin",
-  AdminUserRouter
-);
-
-
-// =====================================================
-// LOGIN EMAIL
-// =====================================================
-
-app.use(
-  "/admin",
-  LoginEmailRouter
-);
-
-
-// =====================================================
-// EVENTS
-// =====================================================
-
-app.use(
-  "/events",
-  async (
-    req,
-    res,
-    next
-  ) => {
-
-    try {
-
-      await connectDB();
-
-      next();
-
-    } catch (error) {
-
-      res.status(500).json({
-        success: false,
-        message:
-          "Database connection failed",
-      });
-
-    }
-  }
-);
-
-app.use(
-  "/events",
-  eventRoutes
-);
-
-
-// =====================================================
-// EVENT TEST
-// =====================================================
-
-app.get(
-  "/events/test",
   (req, res) => {
 
-    res.json({
+    res.status(200).json({
+
       success: true,
+
       message:
-        "EVENT ROUTE WORKING",
+        "Event Management Backend is running.",
+
     });
 
   }
@@ -257,7 +340,78 @@ app.get(
 
 
 // =====================================================
+// TEST ROUTE
+// =====================================================
+
+app.get(
+  "/test",
+  (req, res) => {
+
+    res.status(200).json({
+
+      success: true,
+
+      message:
+        "User backend is working",
+
+    });
+
+  }
+);
+
+
+// =====================================================
+// 404
+// =====================================================
+
+app.use(
+  (req, res) => {
+
+    res.status(404).json({
+
+      success: false,
+
+      message:
+        "Route not found",
+
+      path:
+        req.originalUrl,
+
+    });
+
+  }
+);
+
+
+// =====================================================
+// LOCAL SERVER
+// =====================================================
+
+if (
+  require.main === module
+) {
+
+  const PORT =
+    process.env.PORT || 2005;
+
+
+  app.listen(
+    PORT,
+    () => {
+
+      console.log(
+        `Server running on port ${PORT}`
+      );
+
+    }
+  );
+
+}
+
+
+// =====================================================
 // EXPORT
 // =====================================================
 
-module.exports = app;
+module.exports =
+  app;
