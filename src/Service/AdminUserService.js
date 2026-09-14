@@ -23,12 +23,10 @@ const getUsersFromUserProject = async () => {
 
     }
 
-
     console.log(
       "Getting users from:",
       `${USER_API_URL}/login/getusers`
     );
-
 
     const response =
       await axios.get(
@@ -38,12 +36,10 @@ const getUsersFromUserProject = async () => {
         }
       );
 
-
     console.log(
       "USER API RESPONSE:",
       response.data
     );
-
 
     let users = [];
 
@@ -141,7 +137,6 @@ const getUsersFromUserProject = async () => {
       error.message
     );
 
-
     return {
 
       success: false,
@@ -157,7 +152,7 @@ const getUsersFromUserProject = async () => {
 
 
 // =====================================================
-// SYNC USERS
+// SYNC ALL USERS
 // =====================================================
 
 const syncUsers = async () => {
@@ -319,6 +314,120 @@ const syncUsers = async () => {
 
 
 // =====================================================
+// SYNC SINGLE USER IMMEDIATELY
+// =====================================================
+
+const syncSingleUser = async (user) => {
+
+  try {
+
+    if (!user || !user._id) {
+
+      return {
+
+        success: false,
+
+        message:
+          "Invalid user data",
+
+      };
+
+    }
+
+
+    const userData = {
+
+      sourceUserId:
+        user._id,
+
+      name:
+        user.name || "",
+
+      email:
+        user.email || "",
+
+      phone:
+        user.phone || "",
+
+      bio:
+        user.bio || "",
+
+      profileImage:
+        user.profileImage || "",
+
+      role:
+        user.role || "user",
+
+      status:
+        user.status || "Online",
+
+      source:
+        "user-project",
+
+    };
+
+
+    // =================================================
+    // INSERT OR UPDATE
+    // =================================================
+
+    const adminUser =
+      await AdminUser.findOneAndUpdate(
+
+        {
+          sourceUserId:
+            user._id,
+        },
+
+        {
+          $set:
+            userData,
+        },
+
+        {
+          new: true,
+          upsert: true,
+        }
+
+      );
+
+
+    return {
+
+      success: true,
+
+      message:
+        "User synchronized immediately",
+
+      user:
+        adminUser,
+
+    };
+
+
+  } catch (error) {
+
+    console.error(
+      "SYNC SINGLE USER ERROR:",
+      error.message
+    );
+
+
+    return {
+
+      success: false,
+
+      message:
+        error.message,
+
+    };
+
+  }
+
+};
+
+
+// =====================================================
 // GET ALL ADMIN USERS
 // =====================================================
 
@@ -425,9 +534,15 @@ const getAdminUserById = async (id) => {
 };
 
 
+// =====================================================
+// EXPORT
+// =====================================================
+
 module.exports = {
 
   syncUsers,
+
+  syncSingleUser,
 
   getAdminUsers,
 

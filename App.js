@@ -16,6 +16,13 @@ const eventRoutes =
 const AdminUserRouter =
   require("./src/Router/AdminUserRouter");
 
+const LoginEmailRouter =
+  require("./src/Router/LoginEmailRouter");
+
+
+// =====================================================
+// APP
+// =====================================================
 
 const app = express();
 
@@ -58,18 +65,14 @@ app.use(
 
 let isConnected = false;
 
-
 const connectDB = async () => {
 
   if (
     isConnected &&
     mongoose.connection.readyState === 1
   ) {
-
     return;
-
   }
-
 
   if (!process.env.MONGO_URI) {
 
@@ -79,14 +82,11 @@ const connectDB = async () => {
 
   }
 
-
   await mongoose.connect(
     process.env.MONGO_URI
   );
 
-
   isConnected = true;
-
 
   console.log(
     "MongoDB connected"
@@ -107,7 +107,6 @@ app.get(
 
       await connectDB();
 
-
       res.status(200).json({
 
         success: true,
@@ -120,14 +119,12 @@ app.get(
 
       });
 
-
     } catch (error) {
 
       console.error(
         "ROOT DB ERROR:",
         error
       );
-
 
       res.status(500).json({
 
@@ -162,14 +159,12 @@ app.use(
 
       next();
 
-
     } catch (error) {
 
       console.error(
         "ADMIN DATABASE ERROR:",
         error
       );
-
 
       res.status(500).json({
 
@@ -200,6 +195,16 @@ app.use(
 
 
 // =====================================================
+// LOGIN EMAIL ROUTES
+// =====================================================
+
+app.use(
+  "/admin",
+  LoginEmailRouter
+);
+
+
+// =====================================================
 // EVENT DATABASE MIDDLEWARE
 // =====================================================
 
@@ -217,14 +222,12 @@ app.use(
 
       next();
 
-
     } catch (error) {
 
       console.error(
         "DATABASE CONNECTION ERROR:",
         error
       );
-
 
       res.status(500).json({
 
