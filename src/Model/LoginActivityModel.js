@@ -17,15 +17,7 @@ const LoginActivitySchema = new mongoose.Schema(
       required: true,
     },
 
-    loginTime: {
-      type: Date,
-      required: true,
-    },
-
-    logoutTime: {
-      type: Date,
-      default: null,
-    },
+    
 
     status: {
       type: String,
