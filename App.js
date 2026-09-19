@@ -15,11 +15,13 @@ const loginActivityRoutes = require(
   "./src/Router/UserActivityRouter"
 );
 
+
 // =====================================================
 // APP
 // =====================================================
 
 const app = express();
+
 
 // =====================================================
 // MIDDLEWARE
@@ -39,16 +41,21 @@ app.use(
   })
 );
 
+
 // =====================================================
 // STATIC UPLOADS
 // =====================================================
 
-const uploadFolder = path.join(__dirname, "uploads");
+const uploadFolder = path.join(
+  __dirname,
+  "uploads"
+);
 
 app.use(
   "/uploads",
   express.static(uploadFolder)
 );
+
 
 // =====================================================
 // MONGODB CONNECTION
@@ -57,8 +64,13 @@ app.use(
 let isConnected = false;
 
 const connectDB = async () => {
+
   try {
+
+    // -------------------------------------------------
     // Already connected
+    // -------------------------------------------------
+
     if (
       isConnected &&
       mongoose.connection.readyState === 1
@@ -66,22 +78,37 @@ const connectDB = async () => {
       return;
     }
 
-    // Check MongoDB URL
+
+    // -------------------------------------------------
+    // Check MONGO_URI
+    // -------------------------------------------------
+
     if (!process.env.MONGO_URI) {
+
       throw new Error(
-        "MONGO_URI is not defined in .env file"
+        "MONGO_URI is not defined in environment variables"
       );
+
     }
 
+
+    // -------------------------------------------------
     // Connect MongoDB
+    // -------------------------------------------------
+
     await mongoose.connect(
       process.env.MONGO_URI
     );
 
+
     isConnected = true;
 
-    console.log("MongoDB connected successfully");
+    console.log(
+      "MongoDB connected successfully"
+    );
+
   } catch (error) {
+
     isConnected = false;
 
     console.error(
@@ -90,35 +117,60 @@ const connectDB = async () => {
     );
 
     throw error;
+
   }
+
 };
+
 
 // =====================================================
 // ROOT ROUTE
 // =====================================================
 
-app.get("/", async (req, res) => {
-  try {
-    await connectDB();
+app.get(
+  "/",
+  async (req, res) => {
 
-    res.status(200).json({
-      success: true,
-      message: "Admin API is working!",
-      database: "Connected",
-    });
-  } catch (error) {
-    console.error(
-      "ROOT DB ERROR:",
-      error
-    );
+    try {
 
-    res.status(500).json({
-      success: false,
-      message: "Database connection failed",
-      error: error.message,
-    });
+      await connectDB();
+
+      res.status(200).json({
+
+        success: true,
+
+        message:
+          "Admin API is working!",
+
+        database:
+          "Connected",
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "ROOT DB ERROR:",
+        error.message
+      );
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Database connection failed",
+
+        error:
+          error.message,
+
+      });
+
+    }
+
   }
-});
+);
+
 
 // =====================================================
 // DATABASE MIDDLEWARE FOR EVENTS
@@ -127,24 +179,37 @@ app.get("/", async (req, res) => {
 app.use(
   "/events",
   async (req, res, next) => {
+
     try {
+
       await connectDB();
 
       next();
+
     } catch (error) {
+
       console.error(
-        "DATABASE CONNECTION ERROR:",
-        error
+        "EVENT DATABASE CONNECTION ERROR:",
+        error.message
       );
 
       res.status(500).json({
+
         success: false,
-        message: "Database connection failed",
-        error: error.message,
+
+        message:
+          "Database connection failed",
+
+        error:
+          error.message,
+
       });
+
     }
+
   }
 );
+
 
 // =====================================================
 // EVENT ROUTES
@@ -155,23 +220,71 @@ app.use(
   eventRoutes
 );
 
+
+// =====================================================
+// DATABASE MIDDLEWARE FOR LOGIN ACTIVITY
+// =====================================================
+//
+// Login Activity now uses our Admin MongoDB.
+//
+// Flow:
+//
+// Friend API
+//     ↓
+// LoginActivity Controller
+//     ↓
+// Admin MongoDB
+//     ↓
+// Store User
+//     ↓
+// Send Email
+//
+// =====================================================
+
+app.use(
+  "/login-activity",
+  async (req, res, next) => {
+
+    try {
+
+      await connectDB();
+
+      next();
+
+    } catch (error) {
+
+      console.error(
+        "LOGIN ACTIVITY DATABASE CONNECTION ERROR:",
+        error.message
+      );
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Database connection failed",
+
+        error:
+          error.message,
+
+      });
+
+    }
+
+  }
+);
+
+
 // =====================================================
 // LOGIN ACTIVITY ROUTES
-// =====================================================
-//
-// This route does NOT use your MongoDB.
-// It calls your friend's Login Activity API
-// from UserActivityController.js.
-//
-// Example:
-// GET /login-activity/users
-//
 // =====================================================
 
 app.use(
   "/login-activity",
   loginActivityRoutes
 );
+
 
 // =====================================================
 // EVENT TEST ROUTE
@@ -180,12 +293,19 @@ app.use(
 app.get(
   "/events/test",
   (req, res) => {
+
     res.status(200).json({
+
       success: true,
-      message: "EVENT ROUTE WORKING",
+
+      message:
+        "EVENT ROUTE WORKING",
+
     });
+
   }
 );
+
 
 // =====================================================
 // LOGIN ACTIVITY TEST ROUTE
@@ -194,12 +314,19 @@ app.get(
 app.get(
   "/login-activity/test",
   (req, res) => {
+
     res.status(200).json({
+
       success: true,
-      message: "LOGIN ACTIVITY ROUTE WORKING",
+
+      message:
+        "LOGIN ACTIVITY ROUTE WORKING",
+
     });
+
   }
 );
+
 
 // =====================================================
 // 404 ROUTE
@@ -207,13 +334,22 @@ app.get(
 
 app.use(
   (req, res) => {
+
     res.status(404).json({
+
       success: false,
-      message: "Route not found",
-      path: req.originalUrl,
+
+      message:
+        "Route not found",
+
+      path:
+        req.originalUrl,
+
     });
+
   }
 );
+
 
 // =====================================================
 // EXPORT FOR VERCEL

@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const LoginActivitySchema = new mongoose.Schema(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       required: true,
     },
 
@@ -16,8 +16,6 @@ const LoginActivitySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
-    
 
     status: {
       type: String,

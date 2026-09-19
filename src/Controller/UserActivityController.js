@@ -17,7 +17,7 @@ const getUserLoginDetails = async (req, res) => {
   try {
 
     // =================================================
-    // 1. GET USER DATA FROM FRIEND'S API
+    // 1. GET USERS FROM FRIEND API
     // =================================================
 
     const response = await axios.get(
@@ -35,44 +35,88 @@ const getUserLoginDetails = async (req, res) => {
     // =================================================
 
     const users =
-      response.data.data?.users ||
-      response.data.users ||
-      response.data.data ||
+      response.data?.data?.users ||
+      response.data?.users ||
+      response.data?.data ||
+      response.data ||
       [];
 
 
-    // Make sure users is an array
+    console.log(
+      "Users received from friend API:",
+      users.length
+    );
+
+
+    // =================================================
+    // 3. CHECK ARRAY
+    // =================================================
 
     if (!Array.isArray(users)) {
 
       return res.status(400).json({
         success: false,
-        message: "Invalid user data received from friend API",
+        message:
+          "Invalid user data received from friend API",
       });
 
     }
 
 
     // =================================================
-    // 3. STORE USERS IN ADMIN DB
+    // 4. STORE USERS IN ADMIN DB
     // =================================================
-
-    const savedUsers = [];
 
     for (const user of users) {
 
       // -----------------------------------------------
-      // Check whether user already exists
+      // Get user ID
+      // -----------------------------------------------
+
+      const userId =
+        user.userId ||
+        user._id ||
+        user.id;
+
+
+      // -----------------------------------------------
+      // Check required fields
+      // -----------------------------------------------
+
+      if (!userId) {
+
+        console.log(
+          "Skipping user because userId is missing:",
+          user
+        );
+
+        continue;
+      }
+
+
+      if (!user.email) {
+
+        console.log(
+          "Skipping user because email is missing:",
+          user
+        );
+
+        continue;
+      }
+
+
+      // -----------------------------------------------
+      // Check existing user
       // -----------------------------------------------
 
       const existingUser =
         await LoginActivity.findOne({
-          userId: user.userId || user._id || user.id,
+          userId: String(userId),
         });
 
 
       // -----------------------------------------------
-      // If user does not exist, create new record
+      // Only store new user
       // -----------------------------------------------
 
       if (!existingUser) {
@@ -80,17 +124,18 @@ const getUserLoginDetails = async (req, res) => {
         const newUser =
           await LoginActivity.create({
 
-            userId:
-              user.userId ||
-              user._id ||
-              user.id,
+            userId: String(userId),
 
-            name: user.name,
+            name:
+              user.name ||
+              "Event User",
 
-            email: user.email,
+            email:
+              user.email,
 
             status:
-              user.status || "Active",
+              user.status ||
+              "Active",
 
           });
 
@@ -101,9 +146,9 @@ const getUserLoginDetails = async (req, res) => {
         );
 
 
-        // =================================================
-        // 4. SEND EMAIL ONLY AFTER DB STORAGE SUCCESS
-        // =================================================
+        // =============================================
+        // SEND EMAIL AFTER DB STORAGE
+        // =============================================
 
         try {
 
@@ -126,29 +171,27 @@ const getUserLoginDetails = async (req, res) => {
 
         }
 
-
-        savedUsers.push(newUser);
-
-      } else {
-
-        // Existing user
-        savedUsers.push(existingUser);
-
       }
 
     }
 
 
     // =================================================
-    // 5. RETURN ADMIN DB DATA TO FRONTEND
+    // 5. GET ALL USERS FROM ADMIN DB
     // =================================================
 
     const allUsers =
       await LoginActivity.find()
-        .sort({ createdAt: -1 });
+        .sort({
+          createdAt: -1,
+        });
 
 
-    res.status(200).json({
+    // =================================================
+    // 6. SEND RESPONSE
+    // =================================================
+
+    return res.status(200).json({
 
       success: true,
 
@@ -169,10 +212,26 @@ const getUserLoginDetails = async (req, res) => {
   } catch (error) {
 
     console.log(
-      "User Activity Error:",
+      "===================================="
+    );
+
+    console.log(
+      "USER ACTIVITY ERROR"
+    );
+
+    console.log(
+      "===================================="
+    );
+
+    console.log(
+      "Error message:",
       error.message
     );
 
+
+    // -----------------------------------------------
+    // Friend API error
+    // -----------------------------------------------
 
     if (error.response) {
 
@@ -189,14 +248,29 @@ const getUserLoginDetails = async (req, res) => {
     }
 
 
-    res.status(500).json({
+    // -----------------------------------------------
+    // Mongo/Mongoose error
+    // -----------------------------------------------
+
+    if (error.name) {
+
+      console.log(
+        "Error name:",
+        error.name
+      );
+
+    }
+
+
+    return res.status(500).json({
 
       success: false,
 
       message:
         "Unable to fetch and store user login details",
 
-      error: error.message,
+      error:
+        error.message,
 
     });
 
