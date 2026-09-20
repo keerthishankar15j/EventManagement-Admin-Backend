@@ -14,9 +14,11 @@ const eventRoutes = require("./src/Router/EventRouter");
 const loginActivityRoutes = require(
   "./src/Router/UserActivityRouter"
 );
+
 const userContactRoutes = require(
   "./src/Router/UserContactRouter"
 );
+
 
 // =====================================================
 // APP
@@ -57,45 +59,7 @@ app.use(
   "/uploads",
   express.static(uploadFolder)
 );
-// =====================================================
-// USER MESSAGES + CONTACT ROUTES
-// =====================================================
 
-app.use(
-  "/user-contact",
-  async (req, res, next) => {
-
-    try {
-
-      await connectDB();
-
-      next();
-
-    } catch (error) {
-
-      console.error(
-        "USER CONTACT DATABASE ERROR:",
-        error.message
-      );
-
-      res.status(500).json({
-        success: false,
-        message:
-          "Database connection failed",
-        error:
-          error.message,
-      });
-
-    }
-
-  }
-);
-
-
-app.use(
-  "/user-contact",
-  userContactRoutes
-);
 
 // =====================================================
 // MONGODB CONNECTION
@@ -107,10 +71,7 @@ const connectDB = async () => {
 
   try {
 
-    // -------------------------------------------------
     // Already connected
-    // -------------------------------------------------
-
     if (
       isConnected &&
       mongoose.connection.readyState === 1
@@ -119,10 +80,7 @@ const connectDB = async () => {
     }
 
 
-    // -------------------------------------------------
-    // Check MONGO_URI
-    // -------------------------------------------------
-
+    // Check MongoDB URL
     if (!process.env.MONGO_URI) {
 
       throw new Error(
@@ -132,10 +90,7 @@ const connectDB = async () => {
     }
 
 
-    // -------------------------------------------------
     // Connect MongoDB
-    // -------------------------------------------------
-
     await mongoose.connect(
       process.env.MONGO_URI
     );
@@ -213,7 +168,7 @@ app.get(
 
 
 // =====================================================
-// DATABASE MIDDLEWARE FOR EVENTS
+// EVENTS
 // =====================================================
 
 app.use(
@@ -251,10 +206,6 @@ app.use(
 );
 
 
-// =====================================================
-// EVENT ROUTES
-// =====================================================
-
 app.use(
   "/events",
   eventRoutes
@@ -262,23 +213,7 @@ app.use(
 
 
 // =====================================================
-// DATABASE MIDDLEWARE FOR LOGIN ACTIVITY
-// =====================================================
-//
-// Login Activity now uses our Admin MongoDB.
-//
-// Flow:
-//
-// Friend API
-//     ↓
-// LoginActivity Controller
-//     ↓
-// Admin MongoDB
-//     ↓
-// Store User
-//     ↓
-// Send Email
-//
+// LOGIN ACTIVITY
 // =====================================================
 
 app.use(
@@ -316,13 +251,27 @@ app.use(
 );
 
 
-// =====================================================
-// LOGIN ACTIVITY ROUTES
-// =====================================================
-
 app.use(
   "/login-activity",
   loginActivityRoutes
+);
+
+
+// =====================================================
+// USER MESSAGES + CONTACT REQUESTS
+// =====================================================
+//
+// These routes fetch data from:
+//
+// https://user-api-iota-six.vercel.app/contact/getcontacts
+//
+// MongoDB connection is NOT required here.
+//
+// =====================================================
+
+app.use(
+  "/user-contact",
+  userContactRoutes
 );
 
 
@@ -361,6 +310,27 @@ app.get(
 
       message:
         "LOGIN ACTIVITY ROUTE WORKING",
+
+    });
+
+  }
+);
+
+
+// =====================================================
+// USER CONTACT TEST ROUTE
+// =====================================================
+
+app.get(
+  "/user-contact/test",
+  (req, res) => {
+
+    res.status(200).json({
+
+      success: true,
+
+      message:
+        "USER CONTACT ROUTE WORKING",
 
     });
 

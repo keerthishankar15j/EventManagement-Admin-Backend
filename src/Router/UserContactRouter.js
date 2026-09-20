@@ -5,14 +5,13 @@ const router = express.Router();
 const {
   getUserMessages,
   getContactRequests,
-} = require(
-  "../Controller/UserContactController"
-);
+  getSingleContact,
+} = require("../Controller/UserContactController");
 
 
-// =====================================================
-// USER MESSAGES
-// =====================================================
+/* =====================================================
+   GET ALL MESSAGES
+===================================================== */
 
 router.get(
   "/messages",
@@ -20,13 +19,33 @@ router.get(
 );
 
 
-// =====================================================
-// CONTACT REQUESTS
-// =====================================================
+/* =====================================================
+   GET ALL CONTACT REQUESTS
+===================================================== */
 
 router.get(
   "/contacts",
   getContactRequests
+);
+
+
+/* =====================================================
+   GET SINGLE MESSAGE
+===================================================== */
+
+router.get(
+  "/messages/:id",
+  getSingleContact
+);
+
+
+/* =====================================================
+   GET SINGLE CONTACT
+===================================================== */
+
+router.get(
+  "/contacts/:id",
+  getSingleContact
 );
 
 
