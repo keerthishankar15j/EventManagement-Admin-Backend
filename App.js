@@ -5,45 +5,57 @@ const mongoose = require("mongoose");
 
 require("dotenv").config();
 
-// =====================================================
-// ROUTES
-// =====================================================
-
 const eventRoutes = require("./src/Router/EventRouter");
-
-const loginActivityRoutes = require(
-  "./src/Router/UserActivityRouter"
-);
-
-const userContactRoutes = require(
-  "./src/Router/UserContactRouter"
-);
-
-
-// =====================================================
-// APP
-// =====================================================
+const loginActivityRoutes = require("./src/Router/UserActivityRouter");
+const userContactRoutes = require("./src/Router/UserContactRouter");
 
 const app = express();
 
-
-// =====================================================
-// MIDDLEWARE
-// =====================================================
-
-app.use(
-  cors({
-    origin: "*",
-  })
-);
-
+app.use(cors({ origin: "*" }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(
-  express.urlencoded({
-    extended: true,
-  })
-);
+
+// =====================================================
+// MONGODB CONNECTION
+// =====================================================
+
+let isConnected = false;
+
+const connectDB = async () => {
+  try {
+    if (
+      isConnected &&
+      mongoose.connection.readyState === 1
+    ) {
+      return;
+    }
+
+    if (!process.env.MONGO_URI) {
+      throw new Error(
+        "MONGO_URI is not defined"
+      );
+    }
+
+    await mongoose.connect(
+      process.env.MONGO_URI
+    );
+
+    isConnected = true;
+
+    console.log("MongoDB connected successfully");
+
+  } catch (error) {
+    isConnected = false;
+
+    console.error(
+      "MongoDB connection error:",
+      error.message
+    );
+
+    throw error;
+  }
+};
 
 
 // =====================================================
@@ -62,109 +74,30 @@ app.use(
 
 
 // =====================================================
-// MONGODB CONNECTION
+// ROOT
 // =====================================================
 
-let isConnected = false;
-
-const connectDB = async () => {
-
+app.get("/", async (req, res) => {
   try {
 
-    // Already connected
-    if (
-      isConnected &&
-      mongoose.connection.readyState === 1
-    ) {
-      return;
-    }
+    await connectDB();
 
-
-    // Check MongoDB URL
-    if (!process.env.MONGO_URI) {
-
-      throw new Error(
-        "MONGO_URI is not defined in environment variables"
-      );
-
-    }
-
-
-    // Connect MongoDB
-    await mongoose.connect(
-      process.env.MONGO_URI
-    );
-
-
-    isConnected = true;
-
-    console.log(
-      "MongoDB connected successfully"
-    );
+    res.status(200).json({
+      success: true,
+      message: "Admin API is working!",
+      database: "Connected",
+    });
 
   } catch (error) {
 
-    isConnected = false;
-
-    console.error(
-      "MongoDB connection error:",
-      error.message
-    );
-
-    throw error;
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+      error: error.message,
+    });
 
   }
-
-};
-
-
-// =====================================================
-// ROOT ROUTE
-// =====================================================
-
-app.get(
-  "/",
-  async (req, res) => {
-
-    try {
-
-      await connectDB();
-
-      res.status(200).json({
-
-        success: true,
-
-        message:
-          "Admin API is working!",
-
-        database:
-          "Connected",
-
-      });
-
-    } catch (error) {
-
-      console.error(
-        "ROOT DB ERROR:",
-        error.message
-      );
-
-      res.status(500).json({
-
-        success: false,
-
-        message:
-          "Database connection failed",
-
-        error:
-          error.message,
-
-      });
-
-    }
-
-  }
-);
+});
 
 
 // =====================================================
@@ -176,35 +109,21 @@ app.use(
   async (req, res, next) => {
 
     try {
-
       await connectDB();
-
       next();
 
     } catch (error) {
 
-      console.error(
-        "EVENT DATABASE CONNECTION ERROR:",
-        error.message
-      );
-
       res.status(500).json({
-
         success: false,
-
-        message:
-          "Database connection failed",
-
-        error:
-          error.message,
-
+        message: "Database connection failed",
+        error: error.message,
       });
 
     }
 
   }
 );
-
 
 app.use(
   "/events",
@@ -221,35 +140,21 @@ app.use(
   async (req, res, next) => {
 
     try {
-
       await connectDB();
-
       next();
 
     } catch (error) {
 
-      console.error(
-        "LOGIN ACTIVITY DATABASE CONNECTION ERROR:",
-        error.message
-      );
-
       res.status(500).json({
-
         success: false,
-
-        message:
-          "Database connection failed",
-
-        error:
-          error.message,
-
+        message: "Database connection failed",
+        error: error.message,
       });
 
     }
 
   }
 );
-
 
 app.use(
   "/login-activity",
@@ -258,14 +163,12 @@ app.use(
 
 
 // =====================================================
-// USER MESSAGES + CONTACT REQUESTS
+// USER CONTACT
 // =====================================================
 //
-// These routes fetch data from:
-//
-// https://user-api-iota-six.vercel.app/contact/getcontacts
-//
-// MongoDB connection is NOT required here.
+// IMPORTANT:
+// This route fetches data from the friend's API.
+// It does NOT need MongoDB.
 //
 // =====================================================
 
@@ -276,49 +179,7 @@ app.use(
 
 
 // =====================================================
-// EVENT TEST ROUTE
-// =====================================================
-
-app.get(
-  "/events/test",
-  (req, res) => {
-
-    res.status(200).json({
-
-      success: true,
-
-      message:
-        "EVENT ROUTE WORKING",
-
-    });
-
-  }
-);
-
-
-// =====================================================
-// LOGIN ACTIVITY TEST ROUTE
-// =====================================================
-
-app.get(
-  "/login-activity/test",
-  (req, res) => {
-
-    res.status(200).json({
-
-      success: true,
-
-      message:
-        "LOGIN ACTIVITY ROUTE WORKING",
-
-    });
-
-  }
-);
-
-
-// =====================================================
-// USER CONTACT TEST ROUTE
+// TEST
 // =====================================================
 
 app.get(
@@ -326,12 +187,8 @@ app.get(
   (req, res) => {
 
     res.status(200).json({
-
       success: true,
-
-      message:
-        "USER CONTACT ROUTE WORKING",
-
+      message: "USER CONTACT ROUTE WORKING",
     });
 
   }
@@ -339,30 +196,20 @@ app.get(
 
 
 // =====================================================
-// 404 ROUTE
+// 404
 // =====================================================
 
 app.use(
   (req, res) => {
 
     res.status(404).json({
-
       success: false,
-
-      message:
-        "Route not found",
-
-      path:
-        req.originalUrl,
-
+      message: "Route not found",
+      path: req.originalUrl,
     });
 
   }
 );
 
-
-// =====================================================
-// EXPORT FOR VERCEL
-// =====================================================
 
 module.exports = app;
