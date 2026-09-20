@@ -14,7 +14,9 @@ const eventRoutes = require("./src/Router/EventRouter");
 const loginActivityRoutes = require(
   "./src/Router/UserActivityRouter"
 );
-
+const userContactRoutes = require(
+  "./src/Router/UserContactRouter"
+);
 
 // =====================================================
 // APP
@@ -55,7 +57,45 @@ app.use(
   "/uploads",
   express.static(uploadFolder)
 );
+// =====================================================
+// USER MESSAGES + CONTACT ROUTES
+// =====================================================
 
+app.use(
+  "/user-contact",
+  async (req, res, next) => {
+
+    try {
+
+      await connectDB();
+
+      next();
+
+    } catch (error) {
+
+      console.error(
+        "USER CONTACT DATABASE ERROR:",
+        error.message
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Database connection failed",
+        error:
+          error.message,
+      });
+
+    }
+
+  }
+);
+
+
+app.use(
+  "/user-contact",
+  userContactRoutes
+);
 
 // =====================================================
 // MONGODB CONNECTION
