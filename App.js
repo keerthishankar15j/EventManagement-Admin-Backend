@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -9,12 +10,39 @@ const eventRoutes = require("./src/Router/EventRouter");
 const loginActivityRoutes = require("./src/Router/UserActivityRouter");
 const userContactRoutes = require("./src/Router/UserContactRouter");
 const OrganizationRouter = require("./src/Router/OrganizationRouter");
+
 const app = express();
 
-app.use(cors({ origin: "*" }));
+// =====================================================
+// CORS
+// =====================================================
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://event-admin-one.vercel.app",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// =====================================================
+// MIDDLEWARE
+// =====================================================
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 // =====================================================
 // MONGODB CONNECTION
@@ -32,14 +60,10 @@ const connectDB = async () => {
     }
 
     if (!process.env.MONGO_URI) {
-      throw new Error(
-        "MONGO_URI is not defined"
-      );
+      throw new Error("MONGO_URI is not defined");
     }
 
-    await mongoose.connect(
-      process.env.MONGO_URI
-    );
+    await mongoose.connect(process.env.MONGO_URI);
 
     isConnected = true;
 
@@ -57,7 +81,6 @@ const connectDB = async () => {
   }
 };
 
-
 // =====================================================
 // STATIC UPLOADS
 // =====================================================
@@ -72,14 +95,12 @@ app.use(
   express.static(uploadFolder)
 );
 
-
 // =====================================================
 // ROOT
 // =====================================================
 
 app.get("/", async (req, res) => {
   try {
-
     await connectDB();
 
     res.status(200).json({
@@ -89,16 +110,13 @@ app.get("/", async (req, res) => {
     });
 
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: "Database connection failed",
       error: error.message,
     });
-
   }
 });
-
 
 // =====================================================
 // EVENTS
@@ -107,29 +125,20 @@ app.get("/", async (req, res) => {
 app.use(
   "/events",
   async (req, res, next) => {
-
     try {
       await connectDB();
       next();
-
     } catch (error) {
-
       res.status(500).json({
         success: false,
         message: "Database connection failed",
         error: error.message,
       });
-
     }
-
   }
 );
 
-app.use(
-  "/events",
-  eventRoutes
-);
-
+app.use("/events", eventRoutes);
 
 // =====================================================
 // LOGIN ACTIVITY
@@ -138,38 +147,23 @@ app.use(
 app.use(
   "/login-activity",
   async (req, res, next) => {
-
     try {
       await connectDB();
       next();
-
     } catch (error) {
-
       res.status(500).json({
         success: false,
         message: "Database connection failed",
         error: error.message,
       });
-
     }
-
   }
 );
 
-app.use(
-  "/login-activity",
-  loginActivityRoutes
-);
-
+app.use("/login-activity", loginActivityRoutes);
 
 // =====================================================
 // USER CONTACT
-// =====================================================
-//
-// IMPORTANT:
-// This route fetches data from the friend's API.
-// It does NOT need MongoDB.
-//
 // =====================================================
 
 app.use(
@@ -177,22 +171,26 @@ app.use(
   userContactRoutes
 );
 
-
 // =====================================================
-// TEST
+// ORGANIZATION
 // =====================================================
 
-app.get(
-  "/user-contact/test",
-  (req, res) => {
-
-    res.status(200).json({
-      success: true,
-      message: "USER CONTACT ROUTE WORKING",
-    });
-
+app.use(
+  "/organization",
+  async (req, res, next) => {
+    try {
+      await connectDB();
+      next();
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Database connection failed",
+        error: error.message,
+      });
+    }
   }
 );
+
 app.use(
   "/organization",
   OrganizationRouter
@@ -202,17 +200,16 @@ app.use(
 // 404
 // =====================================================
 
-app.use(
-  (req, res) => {
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.originalUrl,
+  });
+});
 
-    res.status(404).json({
-      success: false,
-      message: "Route not found",
-      path: req.originalUrl,
-    });
-
-  }
-);
-
+// =====================================================
+// EXPORT
+// =====================================================
 
 module.exports = app;
