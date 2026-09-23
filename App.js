@@ -8,7 +8,7 @@ require("dotenv").config();
 const eventRoutes = require("./src/Router/EventRouter");
 const loginActivityRoutes = require("./src/Router/UserActivityRouter");
 const userContactRoutes = require("./src/Router/UserContactRouter");
-
+const OrganizationRouter = require("./src/Router/OrganizationRouter");
 const app = express();
 
 app.use(cors({ origin: "*" }));
@@ -193,7 +193,10 @@ app.get(
 
   }
 );
-
+app.use(
+  "/organization",
+  OrganizationRouter
+);
 
 // =====================================================
 // 404
