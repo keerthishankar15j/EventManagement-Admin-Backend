@@ -1,5 +1,5 @@
 const OrganizationRequest = require("../Model/OrganizationModel");
-const sendOrganizationReplyEmail = require("../Service/EmailService");
+const sendOrganizationReplyEmail = require("../Server/EmailServer");
 
 // ======================================================
 // USER → SEND ORGANIZATION REQUEST

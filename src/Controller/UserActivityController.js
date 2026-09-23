@@ -3,7 +3,7 @@ const LoginActivity = require("../Model/LoginActivityModel");
 
 const {
   sendLoginSuccessEmail,
-} = require("../Server/EmailService");
+} = require("../Server/EmailServer");
 
 
 // =====================================================
