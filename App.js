@@ -26,13 +26,10 @@ app.use(
   cors({
     origin: function (origin, callback) {
 
-      // Allow requests without an origin
-      // Example: Postman / server-to-server
       if (!origin) {
         return callback(null, true);
       }
 
-      // Allow known frontend origins
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -42,7 +39,6 @@ app.use(
         origin
       );
 
-      // Don't crash the server
       return callback(null, false);
     },
 
@@ -83,9 +79,9 @@ app.use(
 let isConnected = false;
 
 const connectDB = async () => {
+
   try {
 
-    // Already connected
     if (
       isConnected &&
       mongoose.connection.readyState === 1
@@ -93,14 +89,13 @@ const connectDB = async () => {
       return;
     }
 
-    // Check MONGO_URI
     if (!process.env.MONGO_URI) {
+
       throw new Error(
         "MONGO_URI is not defined in environment variables"
       );
     }
 
-    // Connect MongoDB
     await mongoose.connect(
       process.env.MONGO_URI
     );
@@ -230,9 +225,6 @@ app.use(
 // =====================================================
 // USER CONTACT
 // =====================================================
-// This route does NOT connect to MongoDB.
-// It gets contact/message data from friend's API.
-// =====================================================
 
 app.use(
   "/user-contact",
@@ -240,30 +232,12 @@ app.use(
 );
 
 // =====================================================
-// ORGANIZATION
+// ORGANIZER REQUESTS
 // =====================================================
-
-app.use(
-  "/organization",
-  async (req, res, next) => {
-
-    try {
-
-      await connectDB();
-
-      next();
-
-    } catch (error) {
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Database connection failed",
-        error: error.message,
-      });
-    }
-  }
-);
+// IMPORTANT:
+// No MongoDB connection here.
+// Data comes from User API.
+// =====================================================
 
 app.use(
   "/organization",
@@ -271,7 +245,7 @@ app.use(
 );
 
 // =====================================================
-// 404 ROUTE
+// 404
 // =====================================================
 
 app.use((req, res) => {
@@ -305,7 +279,7 @@ app.use(
 );
 
 // =====================================================
-// EXPORT APP
+// EXPORT
 // =====================================================
 
 module.exports = app;

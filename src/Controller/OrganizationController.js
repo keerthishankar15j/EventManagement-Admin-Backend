@@ -1,242 +1,152 @@
-const OrganizationRequest = require("../Model/OrganizationModel");
-const sendOrganizationReplyEmail = require("../Server/EmailServer");
+const axios = require("axios");
 
-// ======================================================
-// USER → SEND ORGANIZATION REQUEST
-// ======================================================
+// =====================================================
+// USER SIDE ORGANIZER API
+// =====================================================
 
-const createOrganizationRequest = async (req, res) => {
+const ORGANIZER_API =
+  "https://user-api-iota-six.vercel.app/organizer-requests";
+
+// =====================================================
+// GET ALL ORGANIZER REQUESTS
+// =====================================================
+
+const getOrganizationRequests = async (req, res) => {
   try {
-    const {
-      userId,
-      name,
-      email,
-      phone,
-      organizationName,
-      organizationType,
-      eventName,
-      eventDate,
-      location,
-      numberOfPeople,
-      requirements,
-      message,
-    } = req.body;
 
-    if (
-      !userId ||
-      !name ||
-      !email ||
-      !phone ||
-      !organizationName ||
-      !organizationType ||
-      !eventName ||
-      !eventDate ||
-      !location ||
-      !numberOfPeople
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Please fill all required fields",
-      });
-    }
-
-    const organization = new OrganizationRequest({
-      userId,
-      name,
-      email,
-      phone,
-      organizationName,
-      organizationType,
-      eventName,
-      eventDate,
-      location,
-      numberOfPeople,
-      requirements,
-      message,
-    });
-
-    const savedOrganization = await organization.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Organization request sent successfully",
-      data: savedOrganization,
-    });
-  } catch (error) {
-    console.error("CREATE ORGANIZATION ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to create organization request",
-      error: error.message,
-    });
-  }
-};
-
-
-// ======================================================
-// ADMIN → GET ALL ORGANIZATION REQUESTS
-// ======================================================
-
-const getAllOrganizationRequests = async (req, res) => {
-  try {
-    const organizations = await OrganizationRequest.find()
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      count: organizations.length,
-      data: organizations,
-    });
-  } catch (error) {
-    console.error("GET ORGANIZATION ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to get organization requests",
-      error: error.message,
-    });
-  }
-};
-
-
-// ======================================================
-// ADMIN → GET ONE ORGANIZATION REQUEST
-// ======================================================
-
-const getOrganizationById = async (req, res) => {
-  try {
-    const organization = await OrganizationRequest.findById(
-      req.params.id
+    console.log(
+      "Fetching all organizer requests..."
     );
 
-    if (!organization) {
-      return res.status(404).json({
-        success: false,
-        message: "Organization request not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: organization,
-    });
-  } catch (error) {
-    console.error("GET ORGANIZATION BY ID ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to get organization request",
-      error: error.message,
-    });
-  }
-};
-
-
-// ======================================================
-// ADMIN → SEND REPLY
-// ======================================================
-
-const replyToOrganization = async (req, res) => {
-  try {
-    const { reply } = req.body;
-
-    if (!reply || reply.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "Reply is required",
-      });
-    }
-
-    const organization = await OrganizationRequest.findById(
-      req.params.id
+    const response = await axios.get(
+      `${ORGANIZER_API}/getrequests`
     );
 
-    if (!organization) {
-      return res.status(404).json({
-        success: false,
-        message: "Organization request not found",
-      });
-    }
+    console.log(
+      "Organizer API response:",
+      response.data
+    );
 
-    organization.adminReply = reply;
-    organization.status = "Replied";
-    organization.repliedAt = new Date();
+    const requests =
+      response.data?.data ||
+      response.data?.requests ||
+      response.data ||
+      [];
 
-    const updatedOrganization = await organization.save();
+    return res.status(200).json({
+      success: true,
+      message:
+        "Organizer requests fetched successfully",
+      data: Array.isArray(requests)
+        ? requests
+        : [],
+    });
 
-    // ==========================================
-    // SEND EMAIL TO USER
-    // ==========================================
+  } catch (error) {
 
-    try {
-      await sendOrganizationReplyEmail(
-        organization.email,
-        organization.name,
-        organization.organizationName,
-        reply
+    console.error(
+      "GET ORGANIZER REQUESTS ERROR:",
+      error.message
+    );
+
+    if (error.response) {
+
+      console.error(
+        "User API status:",
+        error.response.status
       );
-    } catch (emailError) {
-      console.error("EMAIL ERROR:", emailError);
 
-      // Database reply is already saved.
-      // Email failure should not remove the reply.
+      console.error(
+        "User API data:",
+        error.response.data
+      );
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Reply sent successfully",
-      data: updatedOrganization,
-    });
-  } catch (error) {
-    console.error("REPLY ORGANIZATION ERROR:", error);
-
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to send reply",
+      message:
+        "Unable to fetch organizer requests",
       error: error.message,
     });
   }
 };
 
+// =====================================================
+// GET SINGLE ORGANIZER REQUEST
+// =====================================================
 
-// ======================================================
-// USER → GET THEIR ORGANIZATION REQUESTS
-// ======================================================
+const getSingleOrganizationRequest = async (
+  req,
+  res
+) => {
 
-const getUserOrganizationRequests = async (req, res) => {
   try {
-    const { userId } = req.params;
 
-    const organizations = await OrganizationRequest.find({
-      userId,
-    }).sort({ createdAt: -1 });
+    const { id } = req.params;
 
-    res.status(200).json({
+    if (!id) {
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "Organizer request ID is required",
+      });
+    }
+
+    console.log(
+      "Fetching organizer request:",
+      id
+    );
+
+    const response = await axios.get(
+      `${ORGANIZER_API}/getrequest/${id}`
+    );
+
+    console.log(
+      "Single organizer response:",
+      response.data
+    );
+
+    return res.status(200).json({
       success: true,
-      count: organizations.length,
-      data: organizations,
+      message:
+        "Organizer request fetched successfully",
+      data:
+        response.data?.data ||
+        response.data?.request ||
+        response.data,
     });
-  } catch (error) {
-    console.error("GET USER ORGANIZATION ERROR:", error);
 
-    res.status(500).json({
+  } catch (error) {
+
+    console.error(
+      "GET SINGLE ORGANIZER REQUEST ERROR:",
+      error.message
+    );
+
+    if (error.response) {
+
+      console.error(
+        "User API status:",
+        error.response.status
+      );
+
+      console.error(
+        "User API data:",
+        error.response.data
+      );
+    }
+
+    return res.status(500).json({
       success: false,
-      message: "Failed to get user organization requests",
+      message:
+        "Unable to fetch organizer request",
       error: error.message,
     });
   }
 };
-
-
-// ======================================================
-// EXPORT
-// ======================================================
 
 module.exports = {
-  createOrganizationRequest,
-  getAllOrganizationRequests,
-  getOrganizationById,
-  replyToOrganization,
-  getUserOrganizationRequests,
+  getOrganizationRequests,
+  getSingleOrganizationRequest,
 };

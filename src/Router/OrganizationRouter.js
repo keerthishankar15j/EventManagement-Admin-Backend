@@ -3,45 +3,30 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  createOrganizationRequest,
-  getAllOrganizationRequests,
-  getOrganizationById,
-  replyToOrganization,
-  getUserOrganizationRequests,
-} = require("../Controller/OrganizationController");
-
-
-// USER
-router.post(
-  "/create",
-  createOrganizationRequest
+  getOrganizationRequests,
+  getSingleOrganizationRequest,
+} = require(
+  "../Controller/OrganizationController"
 );
 
-
-// ADMIN
-router.get(
-  "/all",
-  getAllOrganizationRequests
-);
-
+// =====================================================
+// GET ALL ORGANIZER REQUESTS
+// GET /organization/requests
+// =====================================================
 
 router.get(
-  "/get/:id",
-  getOrganizationById
+  "/requests",
+  getOrganizationRequests
 );
 
+// =====================================================
+// GET SINGLE ORGANIZER REQUEST
+// GET /organization/requests/:id
+// =====================================================
 
-router.put(
-  "/reply/:id",
-  replyToOrganization
-);
-
-
-// USER
 router.get(
-  "/user/:userId",
-  getUserOrganizationRequests
+  "/requests/:id",
+  getSingleOrganizationRequest
 );
-
 
 module.exports = router;
