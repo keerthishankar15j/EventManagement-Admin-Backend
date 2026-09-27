@@ -1,37 +1,51 @@
 const axios = require("axios");
+
 const LoginActivity = require("../Model/LoginActivityModel");
 
 const {
   sendLoginSuccessEmail,
 } = require("../Server/EmailServer");
 
-
 // =====================================================
-// GET USER LOGIN DETAILS FROM FRIEND'S API
-// STORE IN ADMIN DB
-// SEND EMAIL AFTER DB STORAGE
+// GET USER LOGIN DETAILS
 // =====================================================
 
 const getUserLoginDetails = async (req, res) => {
-
   try {
 
     // =================================================
-    // 1. GET USERS FROM FRIEND API
+    // CHECK FRIEND API URL
     // =================================================
 
-    const response = await axios.get(
-      process.env.FRIEND_LOGIN_API_URL
+    const apiUrl =
+      process.env.FRIEND_LOGIN_API_URL;
+
+    if (!apiUrl) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "FRIEND_LOGIN_API_URL is not configured",
+      });
+    }
+
+    console.log(
+      "Calling Friend Login API:",
+      apiUrl
     );
+
+    // =================================================
+    // GET USERS FROM FRIEND API
+    // =================================================
+
+    const response = await axios.get(apiUrl);
 
     console.log(
       "Friend API response:",
       response.data
     );
 
-
     // =================================================
-    // 2. GET USERS ARRAY
+    // GET USERS ARRAY
     // =================================================
 
     const users =
@@ -41,89 +55,65 @@ const getUserLoginDetails = async (req, res) => {
       response.data ||
       [];
 
-
     console.log(
-      "Users received from friend API:",
-      users.length
+      "Users received:",
+      Array.isArray(users)
+        ? users.length
+        : "Not an array"
     );
 
-
     // =================================================
-    // 3. CHECK ARRAY
+    // CHECK ARRAY
     // =================================================
 
     if (!Array.isArray(users)) {
-
       return res.status(400).json({
         success: false,
         message:
           "Invalid user data received from friend API",
       });
-
     }
 
-
     // =================================================
-    // 4. STORE USERS IN ADMIN DB
+    // STORE USERS
     // =================================================
 
     for (const user of users) {
-
-      // -----------------------------------------------
-      // Get user ID
-      // -----------------------------------------------
 
       const userId =
         user.userId ||
         user._id ||
         user.id;
 
-
-      // -----------------------------------------------
-      // Check required fields
-      // -----------------------------------------------
-
       if (!userId) {
-
         console.log(
-          "Skipping user because userId is missing:",
-          user
+          "Skipping user - userId missing"
         );
 
         continue;
       }
-
 
       if (!user.email) {
-
         console.log(
-          "Skipping user because email is missing:",
-          user
+          "Skipping user - email missing"
         );
 
         continue;
       }
-
-
-      // -----------------------------------------------
-      // Check existing user
-      // -----------------------------------------------
 
       const existingUser =
         await LoginActivity.findOne({
           userId: String(userId),
         });
 
-
-      // -----------------------------------------------
-      // Only store new user
-      // -----------------------------------------------
+      // =================================================
+      // CREATE NEW USER
+      // =================================================
 
       if (!existingUser) {
 
         const newUser =
           await LoginActivity.create({
-
             userId: String(userId),
 
             name:
@@ -133,22 +123,27 @@ const getUserLoginDetails = async (req, res) => {
             email:
               user.email,
 
+            loginTime:
+              user.loginTime ||
+              null,
+
+            logoutTime:
+              user.logoutTime ||
+              null,
+
             status:
               user.status ||
               "Active",
-
           });
 
-
         console.log(
-          "User stored in Admin DB:",
+          "User stored:",
           newUser.email
         );
 
-
-        // =============================================
-        // SEND EMAIL AFTER DB STORAGE
-        // =============================================
+        // =================================================
+        // SEND EMAIL
+        // =================================================
 
         try {
 
@@ -164,20 +159,19 @@ const getUserLoginDetails = async (req, res) => {
 
         } catch (emailError) {
 
-          console.log(
+          console.error(
             "Email sending failed:",
             emailError.message
           );
 
+          // Do NOT stop the whole request
+          // if email fails.
         }
-
       }
-
     }
 
-
     // =================================================
-    // 5. GET ALL USERS FROM ADMIN DB
+    // GET ALL ADMIN USERS
     // =================================================
 
     const allUsers =
@@ -186,84 +180,60 @@ const getUserLoginDetails = async (req, res) => {
           createdAt: -1,
         });
 
-
     // =================================================
-    // 6. SEND RESPONSE
+    // SUCCESS
     // =================================================
 
     return res.status(200).json({
-
       success: true,
 
       message:
         "Users fetched, stored and processed successfully",
 
       data: {
-
         count: allUsers.length,
-
         users: allUsers,
-
       },
-
     });
-
 
   } catch (error) {
 
-    console.log(
+    console.error(
       "===================================="
     );
 
-    console.log(
+    console.error(
       "USER ACTIVITY ERROR"
     );
 
-    console.log(
+    console.error(
       "===================================="
     );
 
-    console.log(
+    console.error(
       "Error message:",
       error.message
     );
 
-
-    // -----------------------------------------------
-    // Friend API error
-    // -----------------------------------------------
+    console.error(
+      "Error name:",
+      error.name
+    );
 
     if (error.response) {
 
-      console.log(
+      console.error(
         "Friend API status:",
         error.response.status
       );
 
-      console.log(
+      console.error(
         "Friend API data:",
         error.response.data
       );
-
     }
-
-
-    // -----------------------------------------------
-    // Mongo/Mongoose error
-    // -----------------------------------------------
-
-    if (error.name) {
-
-      console.log(
-        "Error name:",
-        error.name
-      );
-
-    }
-
 
     return res.status(500).json({
-
       success: false,
 
       message:
@@ -271,13 +241,13 @@ const getUserLoginDetails = async (req, res) => {
 
       error:
         error.message,
-
     });
-
   }
-
 };
 
+// =====================================================
+// EXPORT
+// =====================================================
 
 module.exports = {
   getUserLoginDetails,

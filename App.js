@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -26,19 +25,44 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+      // Allow requests without origin
+      // such as Postman/server-to-server requests
+      if (!origin) {
+        return callback(null, true);
       }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.log("Blocked CORS origin:", origin);
+
+      return callback(null, false);
     },
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE",
+      "PATCH",
+      "OPTIONS",
+    ],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
+
+    credentials: false,
   })
 );
 
+// Handle preflight requests
+app.options("*", cors());
+
 // =====================================================
-// MIDDLEWARE
+// BODY MIDDLEWARE
 // =====================================================
 
 app.use(express.json());
@@ -60,7 +84,9 @@ const connectDB = async () => {
     }
 
     if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI is not defined");
+      throw new Error(
+        "MONGO_URI is not defined in environment variables"
+      );
     }
 
     await mongoose.connect(process.env.MONGO_URI);
@@ -128,6 +154,7 @@ app.use(
     try {
       await connectDB();
       next();
+
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -138,7 +165,10 @@ app.use(
   }
 );
 
-app.use("/events", eventRoutes);
+app.use(
+  "/events",
+  eventRoutes
+);
 
 // =====================================================
 // LOGIN ACTIVITY
@@ -150,6 +180,7 @@ app.use(
     try {
       await connectDB();
       next();
+
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -160,10 +191,16 @@ app.use(
   }
 );
 
-app.use("/login-activity", loginActivityRoutes);
+app.use(
+  "/login-activity",
+  loginActivityRoutes
+);
 
 // =====================================================
 // USER CONTACT
+// IMPORTANT:
+// This does NOT require MongoDB because
+// it gets data directly from friend's API.
 // =====================================================
 
 app.use(
@@ -181,6 +218,7 @@ app.use(
     try {
       await connectDB();
       next();
+
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -205,6 +243,23 @@ app.use((req, res) => {
     success: false,
     message: "Route not found",
     path: req.originalUrl,
+  });
+});
+
+// =====================================================
+// GLOBAL ERROR HANDLER
+// =====================================================
+
+app.use((error, req, res, next) => {
+  console.error(
+    "GLOBAL ERROR:",
+    error
+  );
+
+  res.status(500).json({
+    success: false,
+    message: "Internal server error",
+    error: error.message,
   });
 });
 
