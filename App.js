@@ -25,18 +25,24 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests without origin
-      // such as Postman/server-to-server requests
+
+      // Allow requests without an origin
+      // Example: Postman / server-to-server
       if (!origin) {
         return callback(null, true);
       }
 
+      // Allow known frontend origins
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      console.log("Blocked CORS origin:", origin);
+      console.log(
+        "Blocked CORS origin:",
+        origin
+      );
 
+      // Don't crash the server
       return callback(null, false);
     },
 
@@ -58,15 +64,17 @@ app.use(
   })
 );
 
-// Handle preflight requests
-app.options("*", cors());
-
 // =====================================================
 // BODY MIDDLEWARE
 // =====================================================
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
 
 // =====================================================
 // MONGODB CONNECTION
@@ -76,6 +84,8 @@ let isConnected = false;
 
 const connectDB = async () => {
   try {
+
+    // Already connected
     if (
       isConnected &&
       mongoose.connection.readyState === 1
@@ -83,19 +93,26 @@ const connectDB = async () => {
       return;
     }
 
+    // Check MONGO_URI
     if (!process.env.MONGO_URI) {
       throw new Error(
         "MONGO_URI is not defined in environment variables"
       );
     }
 
-    await mongoose.connect(process.env.MONGO_URI);
+    // Connect MongoDB
+    await mongoose.connect(
+      process.env.MONGO_URI
+    );
 
     isConnected = true;
 
-    console.log("MongoDB connected successfully");
+    console.log(
+      "MongoDB connected successfully"
+    );
 
   } catch (error) {
+
     isConnected = false;
 
     console.error(
@@ -126,19 +143,23 @@ app.use(
 // =====================================================
 
 app.get("/", async (req, res) => {
+
   try {
+
     await connectDB();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Admin API is working!",
       database: "Connected",
     });
 
   } catch (error) {
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
-      message: "Database connection failed",
+      message:
+        "Database connection failed",
       error: error.message,
     });
   }
@@ -151,14 +172,19 @@ app.get("/", async (req, res) => {
 app.use(
   "/events",
   async (req, res, next) => {
+
     try {
+
       await connectDB();
+
       next();
 
     } catch (error) {
-      res.status(500).json({
+
+      return res.status(500).json({
         success: false,
-        message: "Database connection failed",
+        message:
+          "Database connection failed",
         error: error.message,
       });
     }
@@ -177,14 +203,19 @@ app.use(
 app.use(
   "/login-activity",
   async (req, res, next) => {
+
     try {
+
       await connectDB();
+
       next();
 
     } catch (error) {
-      res.status(500).json({
+
+      return res.status(500).json({
         success: false,
-        message: "Database connection failed",
+        message:
+          "Database connection failed",
         error: error.message,
       });
     }
@@ -198,9 +229,9 @@ app.use(
 
 // =====================================================
 // USER CONTACT
-// IMPORTANT:
-// This does NOT require MongoDB because
-// it gets data directly from friend's API.
+// =====================================================
+// This route does NOT connect to MongoDB.
+// It gets contact/message data from friend's API.
 // =====================================================
 
 app.use(
@@ -215,14 +246,19 @@ app.use(
 app.use(
   "/organization",
   async (req, res, next) => {
+
     try {
+
       await connectDB();
+
       next();
 
     } catch (error) {
-      res.status(500).json({
+
+      return res.status(500).json({
         success: false,
-        message: "Database connection failed",
+        message:
+          "Database connection failed",
         error: error.message,
       });
     }
@@ -235,11 +271,12 @@ app.use(
 );
 
 // =====================================================
-// 404
+// 404 ROUTE
 // =====================================================
 
 app.use((req, res) => {
-  res.status(404).json({
+
+  return res.status(404).json({
     success: false,
     message: "Route not found",
     path: req.originalUrl,
@@ -250,21 +287,25 @@ app.use((req, res) => {
 // GLOBAL ERROR HANDLER
 // =====================================================
 
-app.use((error, req, res, next) => {
-  console.error(
-    "GLOBAL ERROR:",
-    error
-  );
+app.use(
+  (error, req, res, next) => {
 
-  res.status(500).json({
-    success: false,
-    message: "Internal server error",
-    error: error.message,
-  });
-});
+    console.error(
+      "GLOBAL ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Internal server error",
+      error: error.message,
+    });
+  }
+);
 
 // =====================================================
-// EXPORT
+// EXPORT APP
 // =====================================================
 
 module.exports = app;
