@@ -1,90 +1,46 @@
-const mongoose = require("mongoose");
+const express = require("express");
 
-const BookingSchema = new mongoose.Schema(
-  {
-    bookingId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
+const BookTicketModel = require("../Model/BookTicketModel");
 
-    name: {
-      type: String,
-      default: "",
-    },
+const router = express.Router();
 
-    email: {
-      type: String,
-      default: "",
-    },
+// =====================================================
+// GET ALL BOOKED TICKETS
+// =====================================================
 
-    phone: {
-      type: String,
-      default: "",
-    },
+router.get("/getbookings", async (req, res) => {
+  try {
+    console.log("GET /bookings/getbookings called");
 
-    eventId: {
-      type: String,
-      default: "",
-    },
+    const bookings = await BookTicketModel
+      .find({})
+      .sort({
+        createdAt: -1,
+      })
+      .lean();
 
-    eventName: {
-      type: String,
-      default: "",
-    },
+    console.log(
+      "Bookings found:",
+      bookings.length
+    );
 
-    eventDate: {
-      type: String,
-      default: "",
-    },
+    return res.status(200).json({
+      success: true,
+      count: bookings.length,
+      bookings: bookings,
+    });
+  } catch (error) {
+    console.error(
+      "BOOKING FETCH ERROR:",
+      error
+    );
 
-    eventTime: {
-      type: String,
-      default: "",
-    },
-
-    location: {
-      type: String,
-      default: "",
-    },
-
-    ticketPrice: {
-      type: Number,
-      default: 0,
-    },
-
-    quantity: {
-      type: Number,
-      default: 1,
-    },
-
-    totalAmount: {
-      type: Number,
-      default: 0,
-    },
-
-    bookingStatus: {
-      type: String,
-      default: "Confirmed",
-    },
-
-    bookingDate: {
-      type: Date,
-      default: Date.now,
-    },
-
-    originalBookingData: {
-      type: Object,
-      default: {},
-    },
-  },
-  {
-    timestamps: true,
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch bookings",
+      error: error.message,
+    });
   }
-);
+});
 
-module.exports =
-  mongoose.model(
-    "Booking",
-    BookingSchema
-  );
+module.exports = router;

@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -13,10 +12,11 @@ const app = express();
 
 const bookingRoutes = require("./src/Router/BookingRouter");
 
-// Keep your other existing routers here if you have them
-// const signupRoutes = require("./src/Router/SignupRouter");
-// const contactRoutes = require("./src/Router/ContactRouter");
+// Add your other existing routers here
 // const eventRoutes = require("./src/Router/EventRouter");
+// const loginActivityRoutes = require("./src/Router/UserActivityRouter");
+// const userContactRoutes = require("./src/Router/UserContactRouter");
+// const OrganizationRouter = require("./src/Router/OrganizationRouter");
 
 // =====================================================
 // CORS
@@ -25,6 +25,7 @@ const bookingRoutes = require("./src/Router/BookingRouter");
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
+
   "https://event-user-one.vercel.app",
   "https://event-admin-one.vercel.app",
   "https://eventuser-two.vercel.app",
@@ -33,7 +34,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-
       if (!origin) {
         return callback(null, true);
       }
@@ -42,10 +42,7 @@ app.use(
         return callback(null, true);
       }
 
-      console.log(
-        "Blocked CORS origin:",
-        origin
-      );
+      console.log("Blocked CORS origin:", origin);
 
       return callback(null, false);
     },
@@ -72,49 +69,42 @@ app.use(
 // BODY PARSER
 // =====================================================
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 app.use(
   express.urlencoded({
     extended: true,
+    limit: "10mb",
   })
 );
 
 // =====================================================
-// MONGODB CONNECTION
+// MONGODB
 // =====================================================
 
 let isConnected = false;
 
 const connectDB = async () => {
-
-  if (
-    isConnected &&
-    mongoose.connection.readyState === 1
-  ) {
-    return;
-  }
-
-  if (!process.env.MONGO_URI) {
-    throw new Error(
-      "MONGO_URI is missing in Vercel Environment Variables"
-    );
-  }
-
   try {
+    if (
+      isConnected &&
+      mongoose.connection.readyState === 1
+    ) {
+      return;
+    }
 
-    await mongoose.connect(
-      process.env.MONGO_URI
-    );
+    if (!process.env.MONGO_URI) {
+      throw new Error(
+        "MONGO_URI is missing in Vercel Environment Variables"
+      );
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
 
     isConnected = true;
 
-    console.log(
-      "MongoDB connected successfully"
-    );
-
+    console.log("MongoDB connected successfully");
   } catch (error) {
-
     isConnected = false;
 
     console.error(
@@ -127,27 +117,20 @@ const connectDB = async () => {
 };
 
 // =====================================================
-// TEST ROOT
+// ROOT TEST
 // =====================================================
 
 app.get("/", async (req, res) => {
-
   try {
-
     await connectDB();
 
     return res.status(200).json({
       success: true,
-      message: "Eventora User API is working",
+      message: "Eventora Admin API is working!",
       database: "Connected",
     });
-
   } catch (error) {
-
-    console.error(
-      "ROOT ERROR:",
-      error
-    );
+    console.error("ROOT ERROR:", error.message);
 
     return res.status(500).json({
       success: false,
@@ -162,20 +145,15 @@ app.get("/", async (req, res) => {
 // =====================================================
 
 app.use(
-  "/booking",
+  "/bookings",
   async (req, res, next) => {
-
     try {
-
       await connectDB();
-
       next();
-
     } catch (error) {
-
       console.error(
         "BOOKING DATABASE ERROR:",
-        error
+        error.message
       );
 
       return res.status(500).json({
@@ -188,109 +166,52 @@ app.use(
 );
 
 app.use(
-  "/booking",
+  "/bookings",
   bookingRoutes
 );
+
+// =====================================================
+// OTHER ROUTES
+// =====================================================
+
+// Add your existing routes here.
+
+// Example:
+//
+// app.use("/events", eventRoutes);
+// app.use("/login-activity", loginActivityRoutes);
+// app.use("/user-contact", userContactRoutes);
+// app.use("/organization", OrganizationRouter);
 
 // =====================================================
 // 404
 // =====================================================
 
-app.use(
-  (req, res) => {
-
-    return res.status(404).json({
-      success: false,
-      message: "Route not found",
-      path: req.originalUrl,
-    });
-  }
-);
+app.use((req, res) => {
+  return res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.originalUrl,
+  });
+});
 
 // =====================================================
 // GLOBAL ERROR
 // =====================================================
 
-app.use(
-  (error, req, res, next) => {
+app.use((error, req, res, next) => {
+  console.error("GLOBAL ERROR:", error);
 
-    console.error(
-      "GLOBAL ERROR:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message:
-        error.message ||
-        "Internal Server Error",
-    });
-  }
-);
+  return res.status(500).json({
+    success: false,
+    message:
+      error.message ||
+      "Internal Server Error",
+  });
+});
 
 // =====================================================
 // VERCEL
 // =====================================================
 
 module.exports = app;
-```
-
-### And use this `BookingRouter.js`
-
-```js
-const express = require("express");
-
-const BookingModel = require("../Model/BookingModel");
-
-const router = express.Router();
-
-// =====================================================
-// GET ALL BOOKINGS
-// =====================================================
-
-router.get(
-  "/getbookings",
-  async (req, res) => {
-
-    try {
-
-      console.log(
-        "GET /booking/getbookings called"
-      );
-
-      const bookings =
-        await BookingModel
-          .find({})
-          .sort({
-            createdAt: -1,
-          })
-          .lean();
-
-      console.log(
-        "Bookings found:",
-        bookings.length
-      );
-
-      return res.status(200).json({
-        success: true,
-        count: bookings.length,
-        bookings: bookings,
-      });
-
-    } catch (error) {
-
-      console.error(
-        "BOOKING FETCH ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch bookings",
-        error: error.message,
-      });
-    }
-  }
-);
-
-module.exports = router;
