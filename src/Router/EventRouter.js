@@ -12,7 +12,6 @@ const router = express.Router();
 // =====================================================
 
 const upload = multer({
-
   storage: multer.memoryStorage(),
 
   limits: {
@@ -22,17 +21,12 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
 
     if (file.mimetype.startsWith("image/")) {
-
       cb(null, true);
-
     } else {
-
       cb(new Error("Only image files are allowed"));
-
     }
 
   }
-
 });
 
 
@@ -48,6 +42,16 @@ router.post(
 
     try {
 
+      console.log("=================================");
+      console.log("CREATE EVENT");
+      console.log("BODY:", req.body);
+      console.log(
+        "FILE:",
+        req.file ? req.file.originalname : "NO FILE"
+      );
+      console.log("=================================");
+
+
       const {
         name,
         organizer,
@@ -60,6 +64,10 @@ router.post(
         ticketPrice
       } = req.body;
 
+
+      // -------------------------------------------------
+      // VALIDATION
+      // -------------------------------------------------
 
       if (
         !name ||
@@ -83,41 +91,53 @@ router.post(
       }
 
 
-      // Convert image to Base64
+      // -------------------------------------------------
+      // IMAGE BASE64
+      // -------------------------------------------------
+
       const imageBase64 =
         `data:${req.file.mimetype};base64,${req.file.buffer.toString(
           "base64"
         )}`;
 
 
-      const newEvent =
-        new eventModel({
+      // -------------------------------------------------
+      // CREATE EVENT
+      // -------------------------------------------------
 
-          name: name.trim(),
+      const newEvent = new eventModel({
 
-          organizer: organizer.trim(),
+        name: name.trim(),
 
-          date,
+        organizer: organizer.trim(),
 
-          time,
+        date,
 
-          location: location.trim(),
+        time,
 
-          description: description.trim(),
+        location: location.trim(),
 
-          category,
+        description: description.trim(),
 
-          tickets: Number(tickets),
+        category,
 
-          ticketPrice: Number(ticketPrice),
+        tickets: Number(tickets),
 
-          image: imageBase64
+        ticketPrice: Number(ticketPrice),
 
-        });
+        image: imageBase64
+
+      });
 
 
       const savedEvent =
         await newEvent.save();
+
+
+      console.log(
+        "EVENT SAVED:",
+        savedEvent._id
+      );
 
 
       return res.status(201).json({
@@ -157,8 +177,8 @@ router.post(
 // GET ALL EVENTS
 // =====================================================
 //
-// Image is NOT sent directly.
-// Instead imageUrl is generated.
+// This API does NOT send the Base64 image.
+// It sends an imageUrl instead.
 // =====================================================
 
 router.get(
@@ -177,19 +197,32 @@ router.get(
           });
 
 
+      // IMPORTANT:
+      // Get API base URL from request
+
       const baseUrl =
         `${req.protocol}://${req.get("host")}`;
 
 
       const formattedEvents =
-        events.map((event) => ({
+        events.map((event) => {
 
-          ...event.toObject(),
+          return {
 
-          imageUrl:
-            `${baseUrl}/events/image/${event._id}`
+            ...event.toObject(),
 
-        }));
+            imageUrl:
+              `${baseUrl}/events/image/${event._id}`
+
+          };
+
+        });
+
+
+      console.log(
+        "EVENT COUNT:",
+        formattedEvents.length
+      );
 
 
       return res.status(200).json({
@@ -214,11 +247,9 @@ router.get(
 
         success: false,
 
-        message:
-          "Failed to get events",
+        message: "Failed to get events",
 
-        error:
-          error.message
+        error: error.message
 
       });
 
@@ -239,11 +270,21 @@ router.get(
 
     try {
 
+      console.log(
+        "IMAGE REQUEST:",
+        req.params.id
+      );
+
+
       const event =
         await eventModel
           .findById(req.params.id)
           .select("image");
 
+
+      // -------------------------------------------------
+      // EVENT NOT FOUND
+      // -------------------------------------------------
 
       if (!event) {
 
@@ -258,6 +299,10 @@ router.get(
       }
 
 
+      // -------------------------------------------------
+      // IMAGE NOT FOUND
+      // -------------------------------------------------
+
       if (!event.image) {
 
         return res.status(404).json({
@@ -271,9 +316,15 @@ router.get(
       }
 
 
-      // -----------------------------------------------
-      // Extract Base64 image
-      // -----------------------------------------------
+      console.log(
+        "IMAGE FOUND FOR:",
+        req.params.id
+      );
+
+
+      // -------------------------------------------------
+      // CHECK BASE64 FORMAT
+      // -------------------------------------------------
 
       const matches =
         event.image.match(
@@ -287,19 +338,33 @@ router.get(
 
           success: false,
 
-          message: "Invalid image format"
+          message:
+            "Image is not stored in valid Base64 format"
 
         });
 
       }
 
 
+      // -------------------------------------------------
+      // GET MIME TYPE
+      // -------------------------------------------------
+
       const mimeType =
         matches[1];
+
+
+      // -------------------------------------------------
+      // GET BASE64 DATA
+      // -------------------------------------------------
 
       const base64Data =
         matches[2];
 
+
+      // -------------------------------------------------
+      // CONVERT BASE64 TO BUFFER
+      // -------------------------------------------------
 
       const imageBuffer =
         Buffer.from(
@@ -308,17 +373,31 @@ router.get(
         );
 
 
-      res.set(
+      // -------------------------------------------------
+      // RESPONSE HEADERS
+      // -------------------------------------------------
+
+      res.setHeader(
         "Content-Type",
         mimeType
       );
 
 
-      res.set(
+      res.setHeader(
+        "Content-Length",
+        imageBuffer.length
+      );
+
+
+      res.setHeader(
         "Cache-Control",
         "public, max-age=86400"
       );
 
+
+      // -------------------------------------------------
+      // SEND IMAGE
+      // -------------------------------------------------
 
       return res.send(
         imageBuffer
@@ -400,9 +479,11 @@ router.get(
 
         success: false,
 
-        message: "Failed to get event",
+        message:
+          "Failed to get event",
 
-        error: error.message
+        error:
+          error.message
 
       });
 
@@ -424,6 +505,25 @@ router.put(
 
     try {
 
+      console.log("=================================");
+      console.log("UPDATE EVENT");
+      console.log(
+        "ID:",
+        req.params.id
+      );
+      console.log(
+        "BODY:",
+        req.body
+      );
+      console.log(
+        "FILE:",
+        req.file
+          ? req.file.originalname
+          : "NO FILE"
+      );
+      console.log("=================================");
+
+
       const {
         name,
         organizer,
@@ -437,6 +537,10 @@ router.put(
       } = req.body;
 
 
+      // -------------------------------------------------
+      // FIND EVENT
+      // -------------------------------------------------
+
       const existingEvent =
         await eventModel.findById(
           req.params.id
@@ -449,52 +553,75 @@ router.put(
 
           success: false,
 
-          message: "Event not found"
+          message:
+            "Event not found"
 
         });
 
       }
 
 
-      if (name !== undefined)
-        existingEvent.name = name.trim();
+      // -------------------------------------------------
+      // UPDATE FIELDS
+      // -------------------------------------------------
+
+      if (name !== undefined) {
+        existingEvent.name =
+          name.trim();
+      }
 
 
-      if (organizer !== undefined)
-        existingEvent.organizer = organizer.trim();
+      if (organizer !== undefined) {
+        existingEvent.organizer =
+          organizer.trim();
+      }
 
 
-      if (date !== undefined)
-        existingEvent.date = date;
+      if (date !== undefined) {
+        existingEvent.date =
+          date;
+      }
 
 
-      if (time !== undefined)
-        existingEvent.time = time;
+      if (time !== undefined) {
+        existingEvent.time =
+          time;
+      }
 
 
-      if (location !== undefined)
-        existingEvent.location = location.trim();
+      if (location !== undefined) {
+        existingEvent.location =
+          location.trim();
+      }
 
 
-      if (description !== undefined)
+      if (description !== undefined) {
         existingEvent.description =
           description.trim();
+      }
 
 
-      if (category !== undefined)
-        existingEvent.category = category;
+      if (category !== undefined) {
+        existingEvent.category =
+          category;
+      }
 
 
-      if (tickets !== undefined)
-        existingEvent.tickets = Number(tickets);
+      if (tickets !== undefined) {
+        existingEvent.tickets =
+          Number(tickets);
+      }
 
 
-      if (ticketPrice !== undefined)
+      if (ticketPrice !== undefined) {
         existingEvent.ticketPrice =
           Number(ticketPrice);
+      }
 
 
-      // Update image only when new image is provided
+      // -------------------------------------------------
+      // UPDATE IMAGE
+      // -------------------------------------------------
 
       if (req.file) {
 
@@ -506,8 +633,18 @@ router.put(
       }
 
 
+      // -------------------------------------------------
+      // SAVE
+      // -------------------------------------------------
+
       const updatedEvent =
         await existingEvent.save();
+
+
+      console.log(
+        "EVENT UPDATED:",
+        updatedEvent._id
+      );
 
 
       return res.status(200).json({
@@ -568,11 +705,18 @@ router.delete(
 
           success: false,
 
-          message: "Event not found"
+          message:
+            "Event not found"
 
         });
 
       }
+
+
+      console.log(
+        "EVENT DELETED:",
+        deletedEvent._id
+      );
 
 
       return res.status(200).json({
@@ -599,7 +743,8 @@ router.delete(
         message:
           "Failed to delete event",
 
-        error: error.message
+        error:
+          error.message
 
       });
 
