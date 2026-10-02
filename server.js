@@ -98,7 +98,9 @@ mongoose
 const eventRoutes = require("./src/Router/EventRouter");
 
 app.use("/events", eventRoutes);
+const bookingRoutes = require("./src/Router/BookingRouter");
 
+app.use("/bookings", bookingRoutes);
 // =====================================================
 // ROOT ROUTE
 // =====================================================
