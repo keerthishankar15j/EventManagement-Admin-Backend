@@ -12,6 +12,17 @@ const {
 // GET ALL ORGANIZER REQUESTS
 // GET /organization/requests
 // =====================================================
+router.get(
+  "/test",
+  (req, res) => {
+    res.json({
+      success: true,
+      message: "Organization route is working"
+    });
+  }
+);
+
+
 
 router.get(
   "/requests",
