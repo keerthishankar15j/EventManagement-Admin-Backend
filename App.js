@@ -1,35 +1,87 @@
+const express = require("express");
+const cors = require("cors");
+
+require("dotenv").config();
+
+const app = express();
+
 // =====================================================
-// BOOKING ROUTES
+// CORS
 // =====================================================
 
 app.use(
-  "/bookings",
-  async (req, res, next) => {
-    try {
-      await connectDB();
+  cors({
+    origin: true,
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
+  })
+);
 
-      console.log(
-        `BOOKING REQUEST: ${req.method} ${req.originalUrl}`
-      );
+// =====================================================
+// BODY PARSER
+// =====================================================
 
-      next();
-
-    } catch (error) {
-      console.error(
-        "BOOKING DATABASE ERROR:",
-        error.message
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Booking database connection failed",
-        error: error.message,
-      });
-    }
-  }
+app.use(
+  express.json({
+    limit: "10mb",
+  })
 );
 
 app.use(
-  "/bookings",
-  bookingRoutes
+  express.urlencoded({
+    extended: true,
+    limit: "10mb",
+  })
 );
+
+// =====================================================
+// ROOT TEST
+// =====================================================
+
+app.get("/", (req, res) => {
+  console.log("ROOT API CALLED");
+
+  return res.status(200).json({
+    success: true,
+    message: "Eventora Admin API is working!",
+  });
+});
+
+// =====================================================
+// TEST ROUTE
+// =====================================================
+
+app.get("/test", (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Test route working!",
+  });
+});
+
+// =====================================================
+// 404
+// =====================================================
+
+app.use((req, res) => {
+  return res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.originalUrl,
+  });
+});
+
+// =====================================================
+// EXPORT
+// =====================================================
+
+module.exports = app;
