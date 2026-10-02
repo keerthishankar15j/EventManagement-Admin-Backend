@@ -1,193 +1,144 @@
-
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
+const dotenv = require("dotenv");
+const mongoose = require("mongoose");
 
-require("dotenv").config();
+dotenv.config();
 
 const app = express();
 
+// =====================================================
+// CORS CONFIGURATION
+// =====================================================
 
-// =====================================================
-// MIDDLEWARE
-// =====================================================
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+
+  // Admin Frontend
+  "https://event-admin-one.vercel.app",
+
+  // User Frontend
+  "https://event-user-one.vercel.app",
+
+  // Older User Frontend
+  "https://eventuser-two.vercel.app",
+];
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "https://event-admin-one.vercel.app",
-      "https://eventuser-two.vercel.app"
-    ],
+    origin: function (origin, callback) {
+      // Allow requests without origin
+      // Example: Postman, browser direct request
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Allow registered frontend origins
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Block unknown origins
+      console.log("Blocked CORS origin:", origin);
+
+      return callback(null, false);
+    },
 
     methods: [
       "GET",
       "POST",
       "PUT",
-      "PATCH",
       "DELETE",
-      "OPTIONS"
+      "PATCH",
+      "OPTIONS",
     ],
 
     allowedHeaders: [
       "Content-Type",
-      "Authorization"
+      "Authorization",
     ],
 
-    credentials: false
+    credentials: true,
   })
 );
 
+// =====================================================
+// BODY PARSER
+// =====================================================
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 app.use(
   express.urlencoded({
-    extended: true
+    extended: true,
+    limit: "10mb",
   })
 );
 
+// =====================================================
+// MONGODB CONNECTION
+// =====================================================
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB connected successfully");
+  })
+  .catch((error) => {
+    console.error("MongoDB connection error:", error);
+  });
 
 // =====================================================
 // EVENT ROUTES
 // =====================================================
 
-const eventRoutes =
-  require("./src/Router/EventRouter");
+const eventRoutes = require("./src/Router/EventRouter");
 
-app.use(
-  "/events",
-  eventRoutes
-);
-
+app.use("/events", eventRoutes);
 
 // =====================================================
-// USER CONTACT ROUTES
-// =====================================================
-
-const userContactRoutes =
-  require("./src/Router/UserContactRouter");
-
-app.use(
-  "/user-contact",
-  userContactRoutes
-);
-
-
-// =====================================================
-// ORGANIZATION ROUTES
-// =====================================================
-
-const organizationRoutes =
-  require("./src/Router/OrganizationRouter");
-
-app.use(
-  "/organization",
-  organizationRoutes
-);
-
-
-// =====================================================
-// TEST API
+// ROOT ROUTE
 // =====================================================
 
 app.get("/", (req, res) => {
-
-  res.status(200).json({
+  res.json({
     success: true,
-    message: "Eventora Admin API is working!"
+    message: "Eventora Admin API is working!",
   });
-
 });
 
-
 // =====================================================
-// DATABASE
-// =====================================================
-
-mongoose
-  .connect(process.env.MONGO_URI)
-
-  .then(() => {
-
-    console.log(
-      "MongoDB connected successfully"
-    );
-
-  })
-
-  .catch((error) => {
-
-    console.log(
-      "MongoDB Error:",
-      error.message
-    );
-
-  });
-
-
-// =====================================================
-// 404
+// 404 ROUTE
 // =====================================================
 
 app.use((req, res) => {
-
   res.status(404).json({
-
     success: false,
-
     message: "Route not found",
-
-    path: req.originalUrl
-
+    path: req.originalUrl,
   });
-
 });
 
-
 // =====================================================
-// GLOBAL ERROR
+// ERROR HANDLER
 // =====================================================
 
-app.use(
-  (error, req, res, next) => {
+app.use((err, req, res, next) => {
+  console.error("SERVER ERROR:", err);
 
-    console.log(
-      "GLOBAL ERROR:",
-      error
-    );
-
-    res.status(500).json({
-
-      success: false,
-
-      message:
-        error.message ||
-        "Internal server error"
-
-    });
-
-  }
-);
-
+  res.status(500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
+});
 
 // =====================================================
 // SERVER
 // =====================================================
 
-const PORT =
-  process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
-
-app.listen(
-  PORT,
-  () => {
-
-    console.log(
-      `Server running on port ${PORT}`
-    );
-
-  }
-);
-
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
