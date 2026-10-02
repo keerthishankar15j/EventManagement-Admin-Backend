@@ -5,6 +5,8 @@ require("dotenv").config();
 
 const app = express();
 
+const bookingRoutes = require("./src/Router/BookingRouter");
+
 app.use(express.json());
 
 let isConnected = false;
@@ -49,5 +51,11 @@ app.get("/", async (req, res) => {
     });
   }
 });
+
+// =====================================================
+// BOOKING
+// =====================================================
+
+app.use("/bookings", bookingRoutes);
 
 module.exports = app;
