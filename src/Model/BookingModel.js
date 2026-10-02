@@ -1,15 +1,13 @@
 const mongoose = require("mongoose");
 
-const bookingSchema = new mongoose.Schema(
+const BookingSchema = new mongoose.Schema(
   {
-    // Original booking ID from user backend
     bookingId: {
       type: String,
       required: true,
       unique: true,
     },
 
-    // User details
     name: {
       type: String,
       default: "",
@@ -17,9 +15,7 @@ const bookingSchema = new mongoose.Schema(
 
     email: {
       type: String,
-      required: true,
-      lowercase: true,
-      trim: true,
+      default: "",
     },
 
     phone: {
@@ -27,7 +23,6 @@ const bookingSchema = new mongoose.Schema(
       default: "",
     },
 
-    // Event details
     eventId: {
       type: String,
       default: "",
@@ -78,9 +73,8 @@ const bookingSchema = new mongoose.Schema(
       default: Date.now,
     },
 
-    // Keep complete original booking data
     originalBookingData: {
-      type: mongoose.Schema.Types.Mixed,
+      type: Object,
       default: {},
     },
   },
@@ -89,9 +83,8 @@ const bookingSchema = new mongoose.Schema(
   }
 );
 
-const BookingModel = mongoose.model(
-  "AdminBooking",
-  bookingSchema
-);
-
-module.exports = BookingModel;
+module.exports =
+  mongoose.model(
+    "Booking",
+    BookingSchema
+  );
