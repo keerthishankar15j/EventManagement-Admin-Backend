@@ -1,3 +1,4 @@
+
 const express = require("express");
 
 const router = express.Router();
@@ -6,10 +7,11 @@ const {
   getUserMessages,
   getContactRequests,
   getSingleContact,
+  replyToUser,
 } = require("../Controller/UserContactController");
 
 // =====================================================
-// GET ALL MESSAGES
+// GET ALL USER MESSAGES
 // GET /user-contact/messages
 // =====================================================
 
@@ -48,4 +50,15 @@ router.get(
   getSingleContact
 );
 
+// =====================================================
+// REPLY TO USER
+// POST /user-contact/reply/:id
+// =====================================================
+
+router.post(
+  "/reply/:id",
+  replyToUser
+);
+
 module.exports = router;
+
