@@ -1,7 +1,6 @@
 
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 const mongoose = require("mongoose");
 
 require("dotenv").config();
@@ -12,27 +11,22 @@ const app = express();
 // ROUTERS
 // =====================================================
 
-const eventRoutes = require("./src/Router/EventRouter");
-const loginActivityRoutes = require("./src/Router/UserActivityRouter");
-const userContactRoutes = require("./src/Router/UserContactRouter");
-const OrganizationRouter = require("./src/Router/OrganizationRouter");
 const bookingRoutes = require("./src/Router/BookingRouter");
 
+// Keep your other existing routers here if you have them
+// const signupRoutes = require("./src/Router/SignupRouter");
+// const contactRoutes = require("./src/Router/ContactRouter");
+// const eventRoutes = require("./src/Router/EventRouter");
+
 // =====================================================
-// CORS CONFIGURATION
+// CORS
 // =====================================================
 
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-
-  // USER FRONTEND
   "https://event-user-one.vercel.app",
-
-  // ADMIN FRONTEND
   "https://event-admin-one.vercel.app",
-
-  // OLD USER FRONTEND
   "https://eventuser-two.vercel.app",
 ];
 
@@ -40,8 +34,6 @@ app.use(
   cors({
     origin: function (origin, callback) {
 
-      // Allow requests without an Origin
-      // Example: Postman / direct browser request
       if (!origin) {
         return callback(null, true);
       }
@@ -80,16 +72,11 @@ app.use(
 // BODY PARSER
 // =====================================================
 
-app.use(
-  express.json({
-    limit: "10mb",
-  })
-);
+app.use(express.json());
 
 app.use(
   express.urlencoded({
     extended: true,
-    limit: "10mb",
   })
 );
 
@@ -100,20 +87,21 @@ app.use(
 let isConnected = false;
 
 const connectDB = async () => {
+
+  if (
+    isConnected &&
+    mongoose.connection.readyState === 1
+  ) {
+    return;
+  }
+
+  if (!process.env.MONGO_URI) {
+    throw new Error(
+      "MONGO_URI is missing in Vercel Environment Variables"
+    );
+  }
+
   try {
-
-    if (
-      isConnected &&
-      mongoose.connection.readyState === 1
-    ) {
-      return;
-    }
-
-    if (!process.env.MONGO_URI) {
-      throw new Error(
-        "MONGO_URI is not defined"
-      );
-    }
 
     await mongoose.connect(
       process.env.MONGO_URI
@@ -130,7 +118,7 @@ const connectDB = async () => {
     isConnected = false;
 
     console.error(
-      "MongoDB connection error:",
+      "MongoDB connection failed:",
       error.message
     );
 
@@ -139,21 +127,7 @@ const connectDB = async () => {
 };
 
 // =====================================================
-// STATIC UPLOADS
-// =====================================================
-
-const uploadFolder = path.join(
-  __dirname,
-  "uploads"
-);
-
-app.use(
-  "/uploads",
-  express.static(uploadFolder)
-);
-
-// =====================================================
-// ROOT ROUTE
+// TEST ROOT
 // =====================================================
 
 app.get("/", async (req, res) => {
@@ -164,11 +138,16 @@ app.get("/", async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Eventora User API is working!",
+      message: "Eventora User API is working",
       database: "Connected",
     });
 
   } catch (error) {
+
+    console.error(
+      "ROOT ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -194,6 +173,11 @@ app.use(
 
     } catch (error) {
 
+      console.error(
+        "BOOKING DATABASE ERROR:",
+        error
+      );
+
       return res.status(500).json({
         success: false,
         message: "Database connection failed",
@@ -206,84 +190,6 @@ app.use(
 app.use(
   "/booking",
   bookingRoutes
-);
-
-// =====================================================
-// EVENT ROUTES
-// =====================================================
-
-app.use(
-  "/events",
-  async (req, res, next) => {
-
-    try {
-
-      await connectDB();
-
-      next();
-
-    } catch (error) {
-
-      return res.status(500).json({
-        success: false,
-        message: "Database connection failed",
-        error: error.message,
-      });
-    }
-  }
-);
-
-app.use(
-  "/events",
-  eventRoutes
-);
-
-// =====================================================
-// LOGIN ACTIVITY
-// =====================================================
-
-app.use(
-  "/login-activity",
-  async (req, res, next) => {
-
-    try {
-
-      await connectDB();
-
-      next();
-
-    } catch (error) {
-
-      return res.status(500).json({
-        success: false,
-        message: "Database connection failed",
-        error: error.message,
-      });
-    }
-  }
-);
-
-app.use(
-  "/login-activity",
-  loginActivityRoutes
-);
-
-// =====================================================
-// USER CONTACT
-// =====================================================
-
-app.use(
-  "/user-contact",
-  userContactRoutes
-);
-
-// =====================================================
-// ORGANIZER REQUESTS
-// =====================================================
-
-app.use(
-  "/organization",
-  OrganizationRouter
 );
 
 // =====================================================
@@ -302,7 +208,7 @@ app.use(
 );
 
 // =====================================================
-// GLOBAL ERROR HANDLER
+// GLOBAL ERROR
 // =====================================================
 
 app.use(
@@ -329,13 +235,7 @@ app.use(
 module.exports = app;
 ```
 
----
-
-## 2. User Backend `BookingRouter.js`
-
-Your `BookingRouter.js` should have the route **`/getbookings`**.
-
-Use this structure:
+### And use this `BookingRouter.js`
 
 ```js
 const express = require("express");
@@ -354,11 +254,22 @@ router.get(
 
     try {
 
+      console.log(
+        "GET /booking/getbookings called"
+      );
+
       const bookings =
-        await BookingModel.find()
+        await BookingModel
+          .find({})
           .sort({
             createdAt: -1,
-          });
+          })
+          .lean();
+
+      console.log(
+        "Bookings found:",
+        bookings.length
+      );
 
       return res.status(200).json({
         success: true,
@@ -369,57 +280,13 @@ router.get(
     } catch (error) {
 
       console.error(
-        "GET BOOKINGS ERROR:",
+        "BOOKING FETCH ERROR:",
         error
       );
 
       return res.status(500).json({
         success: false,
-        message: "Failed to get bookings",
-        error: error.message,
-      });
-    }
-  }
-);
-
-// =====================================================
-// GET SINGLE BOOKING
-// =====================================================
-
-router.get(
-  "/getbooking/:id",
-  async (req, res) => {
-
-    try {
-
-      const booking =
-        await BookingModel.findById(
-          req.params.id
-        );
-
-      if (!booking) {
-
-        return res.status(404).json({
-          success: false,
-          message: "Booking not found",
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        booking: booking,
-      });
-
-    } catch (error) {
-
-      console.error(
-        "GET SINGLE BOOKING ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Failed to get booking",
+        message: "Failed to fetch bookings",
         error: error.message,
       });
     }
