@@ -13,19 +13,27 @@ const OrganizationRouter = require("./src/Router/OrganizationRouter");
 const app = express();
 
 // =====================================================
-// CORS
+// CORS CONFIGURATION
 // =====================================================
 
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
+
+  // Admin Frontend
   "https://event-admin-one.vercel.app",
+
+  // Current User Frontend
+  "https://event-user-one.vercel.app",
+
+  // Old User Frontend
+  "https://eventuser-two.vercel.app",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-
+      // Allow Postman / direct API requests
       if (!origin) {
         return callback(null, true);
       }
@@ -34,10 +42,7 @@ app.use(
         return callback(null, true);
       }
 
-      console.log(
-        "Blocked CORS origin:",
-        origin
-      );
+      console.log("Blocked CORS origin:", origin);
 
       return callback(null, false);
     },
@@ -46,8 +51,8 @@ app.use(
       "GET",
       "POST",
       "PUT",
-      "DELETE",
       "PATCH",
+      "DELETE",
       "OPTIONS",
     ],
 
@@ -61,14 +66,19 @@ app.use(
 );
 
 // =====================================================
-// BODY MIDDLEWARE
+// BODY PARSER
 // =====================================================
 
-app.use(express.json());
+app.use(
+  express.json({
+    limit: "10mb",
+  })
+);
 
 app.use(
   express.urlencoded({
     extended: true,
+    limit: "10mb",
   })
 );
 
@@ -79,9 +89,7 @@ app.use(
 let isConnected = false;
 
 const connectDB = async () => {
-
   try {
-
     if (
       isConnected &&
       mongoose.connection.readyState === 1
@@ -90,7 +98,6 @@ const connectDB = async () => {
     }
 
     if (!process.env.MONGO_URI) {
-
       throw new Error(
         "MONGO_URI is not defined in environment variables"
       );
@@ -105,9 +112,7 @@ const connectDB = async () => {
     console.log(
       "MongoDB connected successfully"
     );
-
   } catch (error) {
-
     isConnected = false;
 
     console.error(
@@ -134,27 +139,22 @@ app.use(
 );
 
 // =====================================================
-// ROOT
+// ROOT ROUTE
 // =====================================================
 
 app.get("/", async (req, res) => {
-
   try {
-
     await connectDB();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: "Admin API is working!",
+      message: "Eventora Admin API is working!",
       database: "Connected",
     });
-
   } catch (error) {
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message:
-        "Database connection failed",
+      message: "Database connection failed",
       error: error.message,
     });
   }
@@ -167,19 +167,13 @@ app.get("/", async (req, res) => {
 app.use(
   "/events",
   async (req, res, next) => {
-
     try {
-
       await connectDB();
-
       next();
-
     } catch (error) {
-
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
-        message:
-          "Database connection failed",
+        message: "Database connection failed",
         error: error.message,
       });
     }
@@ -198,19 +192,13 @@ app.use(
 app.use(
   "/login-activity",
   async (req, res, next) => {
-
     try {
-
       await connectDB();
-
       next();
-
     } catch (error) {
-
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
-        message:
-          "Database connection failed",
+        message: "Database connection failed",
         error: error.message,
       });
     }
@@ -234,10 +222,6 @@ app.use(
 // =====================================================
 // ORGANIZER REQUESTS
 // =====================================================
-// IMPORTANT:
-// No MongoDB connection here.
-// Data comes from User API.
-// =====================================================
 
 app.use(
   "/organization",
@@ -249,8 +233,7 @@ app.use(
 // =====================================================
 
 app.use((req, res) => {
-
-  return res.status(404).json({
+  res.status(404).json({
     success: false,
     message: "Route not found",
     path: req.originalUrl,
@@ -258,28 +241,25 @@ app.use((req, res) => {
 });
 
 // =====================================================
-// GLOBAL ERROR HANDLER
+// ERROR HANDLER
 // =====================================================
 
-app.use(
-  (error, req, res, next) => {
+app.use((error, req, res, next) => {
+  console.error(
+    "GLOBAL ERROR:",
+    error
+  );
 
-    console.error(
-      "GLOBAL ERROR:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message:
-        "Internal server error",
-      error: error.message,
-    });
-  }
-);
+  res.status(500).json({
+    success: false,
+    message:
+      error.message ||
+      "Internal Server Error",
+  });
+});
 
 // =====================================================
-// EXPORT
+// VERCEL EXPORT
 // =====================================================
 
 module.exports = app;
