@@ -39,9 +39,6 @@ const AdminBookingSchema = new mongoose.Schema(
     // =================================================
     // USER BOOKING ID
     // =================================================
-    // This is the _id coming from User Backend booking.
-    // Used to prevent duplicate bookings in Admin DB.
-    // =================================================
 
     sourceBookingId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -111,16 +108,6 @@ const AdminBookingSchema = new mongoose.Schema(
     },
 
     // =================================================
-    // EVENT IMAGE
-    // =================================================
-
-    eventImage: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    // =================================================
     // TICKET DETAILS
     // =================================================
 
@@ -167,7 +154,7 @@ const AdminBookingSchema = new mongoose.Schema(
     },
 
     // =================================================
-    // STATUS
+    // BOOKING STATUS
     // =================================================
 
     status: {
