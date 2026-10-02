@@ -1,187 +1,333 @@
-
 const nodemailer = require("nodemailer");
-
-// ==========================================
-// EMAIL TRANSPORTER
-// ==========================================
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
 
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-// ==========================================
-// 1. LOGIN SUCCESSFUL EMAIL
-// ==========================================
+// =====================================================
+// 1. LOGIN SUCCESS EMAIL
+// =====================================================
 
-const sendLoginSuccessEmail = async (email, name) => {
+const sendLoginSuccessEmail = async (userEmail, userName) => {
   try {
-    await transporter.sendMail({
-      from: `"Event Management" <${process.env.EMAIL_USER}>`,
-      to: email,
+    const mailOptions = {
+      from: `"Eventora" <${process.env.EMAIL_USER}>`,
+      to: userEmail,
 
-      subject: "Login Successful - Event Management",
+      subject: "Login Successful - Eventora",
 
       html: `
-        <div style="font-family: Arial; padding: 20px;">
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: auto;
+          padding: 30px;
+          border: 1px solid #ddd;
+          border-radius: 10px;
+        ">
 
-          <h2 style="color: #6c3bff;">
-            Login Successful
+          <h2 style="color:#6C3BFF;">
+            Welcome to Eventora 🎉
           </h2>
 
-          <p>Hello ${name},</p>
+          <p>Hello <b>${userName}</b>,</p>
 
           <p>
-            You have successfully logged in to
-            the Event Management System.
+            You have successfully logged in to your Eventora account.
           </p>
 
           <p>
-            Thank you for using our platform.
+            You can now explore upcoming events, book events,
+            and manage your event activities.
           </p>
 
           <br>
 
-          <p>Regards,</p>
-          <p><b>Event Management Team</b></p>
+          <p>
+            Thank you for using <b>Eventora</b>.
+          </p>
+
+          <p>
+            Regards,<br>
+            <b>Eventora Team</b>
+          </p>
 
         </div>
       `,
-    });
+    };
 
-    console.log("Login success email sent");
+    const result = await transporter.sendMail(mailOptions);
+
+    console.log("Login success email sent:", result.messageId);
+
+    return true;
 
   } catch (error) {
-    console.error("Login email error:", error.message);
+    console.log("Login email error:", error.message);
+
+    return false;
   }
 };
 
-// ==========================================
-// 2. MESSAGE REQUEST EMAIL
-// ==========================================
 
-const sendMessageRequestEmail = async (
-  email,
-  name,
-  message
+// =====================================================
+// 2. ADMIN REPLY EMAIL
+// =====================================================
+
+const sendAdminReplyEmail = async (
+  userEmail,
+  userName,
+  originalMessage,
+  adminReply
 ) => {
   try {
-    await transporter.sendMail({
-      from: `"Event Management" <${process.env.EMAIL_USER}>`,
-      to: email,
 
-      subject: "Message Request Received",
+    const mailOptions = {
+
+      from: `"Eventora Admin" <${process.env.EMAIL_USER}>`,
+
+      to: userEmail,
+
+      subject: "Reply from Eventora Admin",
 
       html: `
-        <div style="font-family: Arial; padding: 20px;">
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 650px;
+          margin: auto;
+          padding: 30px;
+          border: 1px solid #ddd;
+          border-radius: 10px;
+        ">
 
-          <h2 style="color: #6c3bff;">
-            Message Request Received
+          <h2 style="color:#6C3BFF;">
+            Eventora Admin Reply
           </h2>
 
-          <p>Hello ${name},</p>
+          <p>Hello <b>${userName}</b>,</p>
 
           <p>
-            We have successfully received your message request.
+            The Eventora Admin has replied to your query.
           </p>
 
-          <h3>Your Message:</h3>
+          <hr>
 
-          <p>
-            ${message}
-          </p>
+          <h3>Your Query</h3>
 
-          <p>
-            Our team will review your request
-            and get back to you soon.
-          </p>
+          <div style="
+            background:#f5f5f5;
+            padding:15px;
+            border-radius:8px;
+          ">
+            ${originalMessage}
+          </div>
 
           <br>
 
-          <p>Regards,</p>
-          <p><b>Event Management Team</b></p>
+          <h3>Admin Reply</h3>
+
+          <div style="
+            background:#eee8ff;
+            padding:15px;
+            border-radius:8px;
+          ">
+            ${adminReply}
+          </div>
+
+          <br>
+
+          <p>
+            If you have any further questions, feel free to contact
+            the Eventora Admin.
+          </p>
+
+          <p>
+            Regards,<br>
+            <b>Eventora Admin Team</b>
+          </p>
 
         </div>
       `,
-    });
+    };
 
-    console.log("Message request email sent");
+    const result = await transporter.sendMail(mailOptions);
+
+    console.log("Admin reply email sent:", result.messageId);
+
+    return true;
 
   } catch (error) {
-    console.error("Message email error:", error.message);
+
+    console.log("Admin reply email error:", error.message);
+
+    return false;
   }
 };
 
-// ==========================================
-// 3. ORGANIZATION REQUEST EMAIL
-// ==========================================
 
-const sendOrganizationRequestEmail = async (
-  email,
-  name,
-  organizationName
+// =====================================================
+// 3. ORGANIZER APPROVE / REJECT EMAIL
+// =====================================================
+
+const sendOrganizerStatusEmail = async (
+  organizerEmail,
+  organizerName,
+  eventName,
+  status,
+  adminMessage = ""
 ) => {
-  try {
-    await transporter.sendMail({
-      from: `"Event Management" <${process.env.EMAIL_USER}>`,
-      to: email,
 
-      subject: "Organization Request Received",
+  try {
+
+    let subject = "";
+
+    let title = "";
+
+    let statusColor = "";
+
+    if (status === "Approved") {
+
+      subject = `Event Request Approved - ${eventName}`;
+
+      title = "Your Event Request Has Been Approved 🎉";
+
+      statusColor = "#16a34a";
+
+    } else {
+
+      subject = `Event Request Rejected - ${eventName}`;
+
+      title = "Your Event Request Has Been Rejected";
+
+      statusColor = "#dc2626";
+    }
+
+
+    const mailOptions = {
+
+      from: `"Eventora Admin" <${process.env.EMAIL_USER}>`,
+
+      to: organizerEmail,
+
+      subject: subject,
 
       html: `
-        <div style="font-family: Arial; padding: 20px;">
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 650px;
+          margin: auto;
+          padding: 30px;
+          border: 1px solid #ddd;
+          border-radius: 10px;
+        ">
 
-          <h2 style="color: #6c3bff;">
-            Organization Request Received
+          <h2 style="color:${statusColor};">
+            ${title}
           </h2>
 
-          <p>Hello ${name},</p>
+          <p>Hello <b>${organizerName}</b>,</p>
 
           <p>
-            Your organization request has been
-            successfully submitted.
+            Your event request has been reviewed by the Eventora Admin.
           </p>
 
-          <h3>Organization Name:</h3>
+          <div style="
+            background:#f5f5f5;
+            padding:20px;
+            border-radius:8px;
+          ">
 
-          <p>
-            ${organizationName}
-          </p>
+            <p>
+              <b>Event Name:</b> ${eventName}
+            </p>
 
-          <p>
-            Our team will review your request
-            and contact you soon.
-          </p>
+            <p>
+              <b>Status:</b>
+
+              <span style="
+                color:${statusColor};
+                font-weight:bold;
+              ">
+                ${status}
+              </span>
+            </p>
+
+          </div>
+
+          ${
+            adminMessage
+              ? `
+                <br>
+
+                <h3>Admin Message</h3>
+
+                <div style="
+                  background:#eee8ff;
+                  padding:15px;
+                  border-radius:8px;
+                ">
+                  ${adminMessage}
+                </div>
+              `
+              : ""
+          }
 
           <br>
 
-          <p>Regards,</p>
-          <p><b>Event Management Team</b></p>
+          ${
+            status === "Approved"
+              ? `
+                <p>
+                  Congratulations! Your event request has been approved.
+                  You can continue with the next steps from your account.
+                </p>
+              `
+              : `
+                <p>
+                  Your event request was not approved at this time.
+                  Please check the admin message for more information.
+                </p>
+              `
+          }
+
+          <p>
+            Regards,<br>
+            <b>Eventora Admin Team</b>
+          </p>
 
         </div>
       `,
-    });
+    };
 
-    console.log("Organization request email sent");
+
+    const result = await transporter.sendMail(mailOptions);
+
+    console.log(
+      "Organizer status email sent:",
+      result.messageId
+    );
+
+    return true;
 
   } catch (error) {
-    console.error(
-      "Organization email error:",
+
+    console.log(
+      "Organizer status email error:",
       error.message
     );
+
+    return false;
   }
 };
 
-// ==========================================
-// EXPORT ALL EMAIL FUNCTIONS
-// ==========================================
 
 module.exports = {
   sendLoginSuccessEmail,
-  sendMessageRequestEmail,
-  sendOrganizationRequestEmail,
+  sendAdminReplyEmail,
+  sendOrganizerStatusEmail,
 };

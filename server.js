@@ -1,60 +1,131 @@
-const express = require("express");
-const cors = require("cors");
+const express =
+  require("express");
 
-const app = express();
+const mongoose =
+  require("mongoose");
+
+const cors =
+  require("cors");
+
+require("dotenv").config();
+
+
+const app =
+  express();
+
 
 // =====================================================
-// CORS
+// MIDDLEWARE
 // =====================================================
 
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "http://localhost:5174",
-      "https://event-admin-one.vercel.app",
-      "https://event-user-one.vercel.app",
+      "https://event-admin-one.vercel.app"
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS"
+    ],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization"
+    ]
   })
 );
 
-app.options("*", cors());
 
-// =====================================================
-// MIDDLEWARE
-// =====================================================
+app.use(
+  express.json()
+);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // =====================================================
 // ROUTES
 // =====================================================
 
-const eventRouter = require("./Routes/EventRouter");
+app.use(
+  "/user-contact",
+  require("./Routes/UserContactRouter")
+);
 
-app.use("/events", eventRouter);
 
-// Other routes if you have them
-// app.use("/users", userRouter);
-// app.use("/contact", contactRouter);
+app.use(
+  "/organization",
+  require("./Routes/OrganizationRouter")
+);
+
 
 // =====================================================
 // TEST
 // =====================================================
 
-app.get("/", (req, res) => {
-  res.send("Admin API is working!");
-});
+app.get(
+  "/",
+  (req, res) => {
+
+    res.send(
+      "Eventora Admin API is working!"
+    );
+
+  }
+);
+
+
+// =====================================================
+// DATABASE
+// =====================================================
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(async () => {
+
+    console.log(
+      "MongoDB connected"
+    );
+
+
+    const {
+      verifyEmailConnection
+    } =
+      require("./Services/EmailService");
+
+
+    await verifyEmailConnection();
+
+  })
+  .catch((error) => {
+
+    console.log(
+      "MongoDB Error:",
+      error.message
+    );
+
+  });
+
 
 // =====================================================
 // SERVER
 // =====================================================
 
-const PORT = process.env.PORT || 3000;
+const PORT =
+  process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+
+app.listen(
+  PORT,
+  () => {
+
+    console.log(
+      `Server running on port ${PORT}`
+    );
+
+  }
+);
