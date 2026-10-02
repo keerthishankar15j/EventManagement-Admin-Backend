@@ -1,8 +1,7 @@
-
 const axios = require("axios");
 
 const {
-  sendOrganizerStatusEmail,
+  sendOrganizerAcceptedEmail,
 } = require("../Server/EmailServer");
 
 // =====================================================
@@ -138,7 +137,6 @@ const getSingleOrganizationRequest = async (
 
 // =====================================================
 // APPROVE / REJECT ORGANIZER REQUEST
-// EMAIL ONLY
 // =====================================================
 
 const updateOrganizationRequestStatus = async (
@@ -146,6 +144,7 @@ const updateOrganizationRequestStatus = async (
   res
 ) => {
   try {
+
     const { id } = req.params;
 
     const {
@@ -179,18 +178,30 @@ const updateOrganizationRequestStatus = async (
     }
 
     console.log(
-      "Organizer request ID:",
+      "================================="
+    );
+
+    console.log(
+      "ORGANIZER STATUS UPDATE"
+    );
+
+    console.log(
+      "Request ID:",
       id
     );
 
     console.log(
-      "Organizer status:",
+      "Status:",
       status
     );
 
     console.log(
-      "Admin message:",
+      "Admin Message:",
       adminMessage
+    );
+
+    console.log(
+      "================================="
     );
 
     // =================================================
@@ -229,13 +240,12 @@ const updateOrganizationRequestStatus = async (
     if (!request.email) {
       return res.status(400).json({
         success: false,
-        message:
-          "Organizer email not found",
+        message: "Organizer email not found",
       });
     }
 
     // =================================================
-    // GET ORGANIZER INFORMATION
+    // ORGANIZER DETAILS
     // =================================================
 
     const organizerEmail =
@@ -248,66 +258,122 @@ const updateOrganizationRequestStatus = async (
       request.eventName || "Your Event";
 
     console.log(
-      "Organizer email:",
+      "Organizer Email:",
       organizerEmail
     );
 
     console.log(
-      "Organizer name:",
+      "Organizer Name:",
       organizerName
     );
 
     console.log(
-      "Event name:",
+      "Event Name:",
       eventName
     );
 
     // =================================================
-    // SEND EMAIL
+    // SEND EMAIL ONLY WHEN APPROVED
     // =================================================
 
-    const emailSent =
-      await sendOrganizerStatusEmail(
-        organizerEmail,
-        organizerName,
-        eventName,
-        status,
-        adminMessage || ""
+    if (status === "Approved") {
+
+      console.log(
+        "Sending organizer accepted email..."
       );
 
+      const emailResult =
+        await sendOrganizerAcceptedEmail(
+          organizerEmail,
+          organizerName,
+          eventName
+        );
+
+      console.log(
+        "Organizer email result:",
+        emailResult
+      );
+
+      // =================================================
+      // CHECK EMAIL RESULT
+      // =================================================
+
+      if (
+        !emailResult ||
+        emailResult.success === false
+      ) {
+
+        console.error(
+          "Organizer accepted email failed:",
+          emailResult
+        );
+
+        return res.status(500).json({
+          success: false,
+          message:
+            "Organizer email could not be sent",
+          error:
+            emailResult?.error ||
+            "Unknown email error",
+        });
+      }
+
+      console.log(
+        "Organizer accepted email sent successfully"
+      );
+    }
+
     // =================================================
-    // CHECK EMAIL RESULT
+    // REJECTED
     // =================================================
 
-    if (!emailSent) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "Organizer email could not be sent",
-      });
+    if (status === "Rejected") {
+
+      console.log(
+        "Organizer request rejected."
+      );
+
+      // We are not sending the accepted email
+      // for rejected requests.
     }
 
     // =================================================
     // SUCCESS
     // =================================================
 
-    console.log(
-      `Organizer ${status} email sent successfully`
-    );
-
     return res.status(200).json({
       success: true,
       message:
-        `Organizer ${status.toLowerCase()} email sent successfully`,
+        status === "Approved"
+          ? "Organizer approved and email sent successfully"
+          : "Organizer request rejected successfully",
     });
 
   } catch (error) {
+
     console.error(
-      "ORGANIZER STATUS EMAIL ERROR:",
+      "================================="
+    );
+
+    console.error(
+      "ORGANIZER STATUS ERROR"
+    );
+
+    console.error(
+      error
+    );
+
+    console.error(
+      "Error message:",
       error.message
     );
 
+    console.error(
+      "================================="
+    );
+
     if (error.response) {
+
       console.error(
         "User API status:",
         error.response.status
@@ -322,7 +388,7 @@ const updateOrganizationRequestStatus = async (
     return res.status(500).json({
       success: false,
       message:
-        "Unable to send organizer status email",
+        "Unable to process organizer request",
       error: error.message,
     });
   }
