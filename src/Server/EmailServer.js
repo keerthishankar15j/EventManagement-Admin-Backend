@@ -38,7 +38,9 @@ const sendEmail = async ({
       success: true,
       messageId: info.messageId,
     };
+
   } catch (error) {
+
     console.error(
       "EMAIL SEND ERROR:",
       error.message
@@ -51,6 +53,7 @@ const sendEmail = async ({
   }
 };
 
+
 // =====================================================
 // 1. LOGIN SUCCESS EMAIL
 // =====================================================
@@ -60,6 +63,7 @@ const sendLoginSuccessEmail = async (
   userName
 ) => {
   try {
+
     const html = `
       <!DOCTYPE html>
 
@@ -222,6 +226,7 @@ const sendLoginSuccessEmail = async (
     });
 
   } catch (error) {
+
     console.error(
       "LOGIN EMAIL ERROR:",
       error.message
@@ -234,6 +239,7 @@ const sendLoginSuccessEmail = async (
   }
 };
 
+
 // =====================================================
 // 2. ADMIN MESSAGE REPLY EMAIL
 // =====================================================
@@ -245,6 +251,7 @@ const sendAdminReplyEmail = async (
   adminReply
 ) => {
   try {
+
     const html = `
       <!DOCTYPE html>
 
@@ -440,6 +447,7 @@ const sendAdminReplyEmail = async (
     });
 
   } catch (error) {
+
     console.error(
       "ADMIN REPLY EMAIL ERROR:",
       error.message
@@ -452,6 +460,7 @@ const sendAdminReplyEmail = async (
   }
 };
 
+
 // =====================================================
 // 3. ORGANIZER REQUEST ACCEPTED EMAIL
 // =====================================================
@@ -462,6 +471,36 @@ const sendOrganizerAcceptedEmail = async (
   eventName
 ) => {
   try {
+
+    console.log("=================================");
+    console.log("ORGANIZER ACCEPTED EMAIL");
+    console.log("User Email:", userEmail);
+    console.log("User Name:", userName);
+    console.log("Event Name:", eventName);
+    console.log("=================================");
+
+
+    // =====================================================
+    // CHECK USER EMAIL
+    // =====================================================
+
+    if (!userEmail) {
+
+      console.error(
+        "ORGANIZER EMAIL ERROR: User email is missing"
+      );
+
+      return {
+        success: false,
+        error: "User email is missing",
+      };
+    }
+
+
+    // =====================================================
+    // ORGANIZER EMAIL HTML
+    // =====================================================
+
     const html = `
       <!DOCTYPE html>
 
@@ -537,7 +576,7 @@ const sendOrganizerAcceptedEmail = async (
                 font-size:15px;
               "
             >
-              Hi <strong>${userName}</strong>,
+              Hi <strong>${userName || "Organizer"}</strong>,
             </p>
 
             <p
@@ -550,6 +589,9 @@ const sendOrganizerAcceptedEmail = async (
               Your organizer request has been accepted
               by the Eventora admin team.
             </p>
+
+
+            <!-- EVENT -->
 
             <div
               style="
@@ -568,10 +610,11 @@ const sendOrganizerAcceptedEmail = async (
                 "
               >
                 <strong>Event:</strong>
-                ${eventName}
+                ${eventName || "Your Event"}
               </p>
 
             </div>
+
 
             <p
               style="
@@ -615,14 +658,32 @@ const sendOrganizerAcceptedEmail = async (
       </html>
     `;
 
-    return await sendEmail({
+
+    // =====================================================
+    // SEND ORGANIZER EMAIL
+    // =====================================================
+
+    const result = await sendEmail({
       to: userEmail,
-      subject:
-        "Organizer Request Accepted - Eventora",
+      subject: "Organizer Request Accepted - Eventora",
       html: html,
     });
 
+
+    // =====================================================
+    // LOG RESULT
+    // =====================================================
+
+    console.log(
+      "ORGANIZER EMAIL RESULT:",
+      result
+    );
+
+
+    return result;
+
   } catch (error) {
+
     console.error(
       "ORGANIZER EMAIL ERROR:",
       error.message
@@ -634,6 +695,7 @@ const sendOrganizerAcceptedEmail = async (
     };
   }
 };
+
 
 // =====================================================
 // 4. BOOKING CONFIRMATION EMAIL
@@ -652,6 +714,7 @@ const sendBookingConfirmationEmail = async (
   bookingId
 ) => {
   try {
+
     let formattedDate = "N/A";
 
     if (eventDate) {
@@ -891,12 +954,12 @@ const sendBookingConfirmationEmail = async (
 
     return await sendEmail({
       to: userEmail,
-      subject:
-        `Booking Confirmed - ${eventName}`,
+      subject: `Booking Confirmed - ${eventName}`,
       html: html,
     });
 
   } catch (error) {
+
     console.error(
       "BOOKING EMAIL ERROR:",
       error.message
@@ -908,6 +971,7 @@ const sendBookingConfirmationEmail = async (
     };
   }
 };
+
 
 // =====================================================
 // EXPORT ALL EMAIL FUNCTIONS
