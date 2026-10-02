@@ -120,10 +120,12 @@ const AdminBookingSchema = new mongoose.Schema(
 
     status: {
       type: String,
+
       enum: [
         "Confirmed",
         "Cancelled",
       ],
+
       default: "Confirmed",
     },
 
@@ -137,6 +139,10 @@ const AdminBookingSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// =====================================================
+// EXPORT
+// =====================================================
 
 module.exports =
   mongoose.models.AdminBooking ||
