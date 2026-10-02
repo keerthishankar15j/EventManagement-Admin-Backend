@@ -1,4 +1,9 @@
+
 const axios = require("axios");
+
+const {
+  sendOrganizerStatusEmail,
+} = require("../Server/EmailServer");
 
 // =====================================================
 // USER SIDE ORGANIZER API
@@ -13,9 +18,7 @@ const ORGANIZER_API =
 
 const getOrganizationRequests = async (req, res) => {
   try {
-    console.log(
-      "Fetching all organizer requests..."
-    );
+    console.log("Fetching all organizer requests...");
 
     const response = await axios.get(
       `${ORGANIZER_API}/getrequests`
@@ -34,9 +37,7 @@ const getOrganizationRequests = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message:
-        "Organizer requests fetched successfully",
-
+      message: "Organizer requests fetched successfully",
       data: Array.isArray(requests)
         ? requests
         : [],
@@ -62,8 +63,7 @@ const getOrganizationRequests = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message:
-        "Unable to fetch organizer requests",
+      message: "Unable to fetch organizer requests",
       error: error.message,
     });
   }
@@ -83,8 +83,7 @@ const getSingleOrganizationRequest = async (
     if (!id) {
       return res.status(400).json({
         success: false,
-        message:
-          "Organizer request ID is required",
+        message: "Organizer request ID is required",
       });
     }
 
@@ -104,10 +103,7 @@ const getSingleOrganizationRequest = async (
 
     return res.status(200).json({
       success: true,
-
-      message:
-        "Organizer request fetched successfully",
-
+      message: "Organizer request fetched successfully",
       data:
         response.data?.data ||
         response.data?.request ||
@@ -134,10 +130,7 @@ const getSingleOrganizationRequest = async (
 
     return res.status(500).json({
       success: false,
-
-      message:
-        "Unable to fetch organizer request",
-
+      message: "Unable to fetch organizer request",
       error: error.message,
     });
   }
@@ -145,6 +138,7 @@ const getSingleOrganizationRequest = async (
 
 // =====================================================
 // APPROVE / REJECT ORGANIZER REQUEST
+// EMAIL ONLY
 // =====================================================
 
 const updateOrganizationRequestStatus = async (
@@ -159,21 +153,20 @@ const updateOrganizationRequestStatus = async (
       adminMessage,
     } = req.body;
 
-    // -----------------------------------------------
+    // =================================================
     // CHECK ID
-    // -----------------------------------------------
+    // =================================================
 
     if (!id) {
       return res.status(400).json({
         success: false,
-        message:
-          "Organizer request ID is required",
+        message: "Organizer request ID is required",
       });
     }
 
-    // -----------------------------------------------
+    // =================================================
     // CHECK STATUS
-    // -----------------------------------------------
+    // =================================================
 
     if (
       !["Approved", "Rejected"].includes(status)
@@ -186,12 +179,12 @@ const updateOrganizationRequestStatus = async (
     }
 
     console.log(
-      "Updating organizer request:",
+      "Organizer request ID:",
       id
     );
 
     console.log(
-      "New status:",
+      "Organizer status:",
       status
     );
 
@@ -201,38 +194,116 @@ const updateOrganizationRequestStatus = async (
     );
 
     // =================================================
-    // CALL USER BACKEND
+    // GET ORGANIZER DETAILS
     // =================================================
 
-    const response = await axios.put(
-      `${ORGANIZER_API}/update-status/${id}`,
-      {
-        status,
-        adminMessage:
-          adminMessage || "",
-      }
+    const response = await axios.get(
+      `${ORGANIZER_API}/getrequest/${id}`
     );
 
     console.log(
-      "Update organizer response:",
+      "Organizer details:",
       response.data
+    );
+
+    const request =
+      response.data?.data ||
+      response.data?.request ||
+      response.data;
+
+    // =================================================
+    // CHECK REQUEST
+    // =================================================
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Organizer request not found",
+      });
+    }
+
+    // =================================================
+    // CHECK EMAIL
+    // =================================================
+
+    if (!request.email) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Organizer email not found",
+      });
+    }
+
+    // =================================================
+    // GET ORGANIZER INFORMATION
+    // =================================================
+
+    const organizerEmail =
+      request.email;
+
+    const organizerName =
+      request.name || "Organizer";
+
+    const eventName =
+      request.eventName || "Your Event";
+
+    console.log(
+      "Organizer email:",
+      organizerEmail
+    );
+
+    console.log(
+      "Organizer name:",
+      organizerName
+    );
+
+    console.log(
+      "Event name:",
+      eventName
+    );
+
+    // =================================================
+    // SEND EMAIL
+    // =================================================
+
+    const emailSent =
+      await sendOrganizerStatusEmail(
+        organizerEmail,
+        organizerName,
+        eventName,
+        status,
+        adminMessage || ""
+      );
+
+    // =================================================
+    // CHECK EMAIL RESULT
+    // =================================================
+
+    if (!emailSent) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Organizer email could not be sent",
+      });
+    }
+
+    // =================================================
+    // SUCCESS
+    // =================================================
+
+    console.log(
+      `Organizer ${status} email sent successfully`
     );
 
     return res.status(200).json({
       success: true,
-
       message:
-        `Organizer request ${status.toLowerCase()} successfully`,
-
-      data:
-        response.data?.data ||
-        response.data?.request ||
-        response.data,
+        `Organizer ${status.toLowerCase()} email sent successfully`,
     });
 
   } catch (error) {
     console.error(
-      "UPDATE ORGANIZER REQUEST ERROR:",
+      "ORGANIZER STATUS EMAIL ERROR:",
       error.message
     );
 
@@ -246,28 +317,12 @@ const updateOrganizationRequestStatus = async (
         "User API data:",
         error.response.data
       );
-
-      return res.status(
-        error.response.status || 500
-      ).json({
-        success: false,
-
-        message:
-          error.response.data?.message ||
-          "Unable to update organizer request",
-
-        error:
-          error.response.data ||
-          error.message,
-      });
     }
 
     return res.status(500).json({
       success: false,
-
       message:
-        "Unable to update organizer request",
-
+        "Unable to send organizer status email",
       error: error.message,
     });
   }
