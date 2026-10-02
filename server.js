@@ -1,17 +1,11 @@
-const express =
-  require("express");
 
-const mongoose =
-  require("mongoose");
-
-const cors =
-  require("cors");
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
 
 require("dotenv").config();
 
-
-const app =
-  express();
+const app = express();
 
 
 // =====================================================
@@ -22,7 +16,9 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://event-admin-one.vercel.app"
+      "http://localhost:5174",
+      "https://event-admin-one.vercel.app",
+      "https://eventuser-two.vercel.app"
     ],
 
     methods: [
@@ -37,46 +33,73 @@ app.use(
     allowedHeaders: [
       "Content-Type",
       "Authorization"
-    ]
+    ],
+
+    credentials: false
   })
 );
 
 
+app.use(express.json());
+
 app.use(
-  express.json()
+  express.urlencoded({
+    extended: true
+  })
 );
 
 
 // =====================================================
-// ROUTES
+// EVENT ROUTES
 // =====================================================
+
+const eventRoutes =
+  require("./src/Router/EventRouter");
+
+app.use(
+  "/events",
+  eventRoutes
+);
+
+
+// =====================================================
+// USER CONTACT ROUTES
+// =====================================================
+
+const userContactRoutes =
+  require("./src/Router/UserContactRouter");
 
 app.use(
   "/user-contact",
-  require("./Routes/UserContactRouter")
+  userContactRoutes
 );
 
+
+// =====================================================
+// ORGANIZATION ROUTES
+// =====================================================
+
+const organizationRoutes =
+  require("./src/Router/OrganizationRouter");
 
 app.use(
   "/organization",
-  require("./Routes/OrganizationRouter")
+  organizationRoutes
 );
 
 
 // =====================================================
-// TEST
+// TEST API
 // =====================================================
 
-app.get(
-  "/",
-  (req, res) => {
+app.get("/", (req, res) => {
 
-    res.send(
-      "Eventora Admin API is working!"
-    );
+  res.status(200).json({
+    success: true,
+    message: "Eventora Admin API is working!"
+  });
 
-  }
-);
+});
 
 
 // =====================================================
@@ -85,22 +108,15 @@ app.get(
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(async () => {
+
+  .then(() => {
 
     console.log(
-      "MongoDB connected"
+      "MongoDB connected successfully"
     );
 
-
-    const {
-      verifyEmailConnection
-    } =
-      require("./Services/EmailService");
-
-
-    await verifyEmailConnection();
-
   })
+
   .catch((error) => {
 
     console.log(
@@ -109,6 +125,51 @@ mongoose
     );
 
   });
+
+
+// =====================================================
+// 404
+// =====================================================
+
+app.use((req, res) => {
+
+  res.status(404).json({
+
+    success: false,
+
+    message: "Route not found",
+
+    path: req.originalUrl
+
+  });
+
+});
+
+
+// =====================================================
+// GLOBAL ERROR
+// =====================================================
+
+app.use(
+  (error, req, res, next) => {
+
+    console.log(
+      "GLOBAL ERROR:",
+      error
+    );
+
+    res.status(500).json({
+
+      success: false,
+
+      message:
+        error.message ||
+        "Internal server error"
+
+    });
+
+  }
+);
 
 
 // =====================================================
@@ -129,3 +190,4 @@ app.listen(
 
   }
 );
+
