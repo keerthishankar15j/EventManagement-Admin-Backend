@@ -7,61 +7,53 @@ const AdminBookingModel = require(
 const router = express.Router();
 
 // =====================================================
-// TEST BOOKING ROUTE
+// TEST
 // =====================================================
 
-router.get(
-  "/test",
-  (req, res) => {
-    return res.status(200).json({
-      success: true,
-      message:
-        "Booking route is working!",
-    });
-  }
-);
+router.get("/test", (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Booking route is working!",
+  });
+});
 
 // =====================================================
 // GET ALL BOOKINGS
 // =====================================================
 
-router.get(
-  "/getbookings",
-  async (req, res) => {
-    try {
-      console.log(
-        "GET /bookings/getbookings"
-      );
+router.get("/getbookings", async (req, res) => {
+  try {
+    console.log(
+      "GET /bookings/getbookings"
+    );
 
-      const bookings =
-        await AdminBookingModel
-          .find({})
-          .sort({
-            createdAt: -1,
-          })
-          .lean();
+    const bookings =
+      await AdminBookingModel
+        .find({})
+        .sort({ createdAt: -1 })
+        .lean();
 
-      return res.status(200).json({
-        success: true,
-        count: bookings.length,
-        bookings: bookings,
-      });
+    return res.status(200).json({
+      success: true,
+      count: bookings.length,
+      bookings: bookings,
+    });
 
-    } catch (error) {
-      console.error(
-        "GET BOOKINGS ERROR:",
-        error
-      );
+  } catch (error) {
+    console.error(
+      "GET BOOKINGS ERROR:",
+      error
+    );
 
-      return res.status(500).json({
-        success: false,
-        message:
-          "Failed to fetch bookings",
-        error: error.message,
-      });
-    }
+    return res.status(500).json({
+      success: false,
+      message:
+        "Failed to fetch bookings",
+      error:
+        error.message,
+    });
   }
-);
+});
 
 // =====================================================
 // GET SINGLE BOOKING
@@ -99,7 +91,8 @@ router.get(
         success: false,
         message:
           "Failed to fetch booking",
-        error: error.message,
+        error:
+          error.message,
       });
     }
   }
@@ -139,7 +132,8 @@ router.get(
         success: false,
         message:
           "Failed to fetch confirmed bookings",
-        error: error.message,
+        error:
+          error.message,
       });
     }
   }
@@ -179,35 +173,45 @@ router.get(
         success: false,
         message:
           "Failed to fetch cancelled bookings",
-        error: error.message,
+        error:
+          error.message,
       });
     }
   }
 );
 
 // =====================================================
-// STORE / SYNC BOOKING
+// STORE BOOKING
 // =====================================================
 
 router.post(
   "/store",
   async (req, res) => {
     try {
-      const bookingData =
-        req.body;
+      const bookingData = req.body;
 
       console.log(
-        "STORE BOOKING:",
+        "===================================="
+      );
+
+      console.log(
+        "STORE BOOKING REQUEST"
+      );
+
+      console.log(
         bookingData
       );
 
+      console.log(
+        "===================================="
+      );
+
       // =================================================
-      // VALIDATION
+      // REQUIRED VALIDATION
       // =================================================
 
       if (
         !bookingData.sourceBookingId ||
-        !bookingData.userName ||
         !bookingData.userEmail ||
         !bookingData.eventName ||
         !bookingData.numberOfTickets
@@ -220,7 +224,35 @@ router.post(
       }
 
       // =================================================
-      // CHECK IF BOOKING ALREADY EXISTS
+      // USER NAME
+      // =================================================
+
+      let userName =
+        bookingData.userName || "";
+
+      // Old bookings may not contain userName.
+      // Get the name from the first attendee.
+
+      if (
+        !userName &&
+        Array.isArray(
+          bookingData.attendees
+        ) &&
+        bookingData.attendees.length > 0
+      ) {
+        userName =
+          bookingData
+            .attendees[0]
+            .name || "";
+      }
+
+      // If still empty
+      if (!userName) {
+        userName = "User";
+      }
+
+      // =================================================
+      // CHECK DUPLICATE BOOKING
       // =================================================
 
       const existingBooking =
@@ -229,13 +261,9 @@ router.post(
             bookingData.sourceBookingId,
         });
 
-      // =================================================
-      // ALREADY EXISTS
-      // =================================================
-
       if (existingBooking) {
         console.log(
-          "Booking already exists:",
+          "BOOKING ALREADY EXISTS:",
           existingBooking._id
         );
 
@@ -244,26 +272,106 @@ router.post(
           alreadyExists: true,
           message:
             "Booking already stored",
-          booking: existingBooking,
+          booking:
+            existingBooking,
         });
       }
 
       // =================================================
-      // CREATE NEW BOOKING
+      // FINAL BOOKING OBJECT
+      // =================================================
+
+      const finalBookingData = {
+        sourceBookingId:
+          bookingData.sourceBookingId,
+
+        userId:
+          bookingData.userId || null,
+
+        userName:
+          userName,
+
+        userEmail:
+          bookingData.userEmail,
+
+        eventId:
+          bookingData.eventId || null,
+
+        eventName:
+          bookingData.eventName,
+
+        eventDate:
+          bookingData.eventDate || null,
+
+        eventTime:
+          bookingData.eventTime || "",
+
+        eventLocation:
+          bookingData.eventLocation || "",
+
+        eventCategory:
+          bookingData.eventCategory ||
+          "Event",
+
+        // EVENT IMAGE
+        eventImage:
+          bookingData.eventImage || "",
+
+        ticketPrice:
+          bookingData.ticketPrice ?? 0,
+
+        numberOfTickets:
+          bookingData.numberOfTickets,
+
+        attendees:
+          Array.isArray(
+            bookingData.attendees
+          )
+            ? bookingData.attendees
+            : [],
+
+        totalAmount:
+          bookingData.totalAmount ?? 0,
+
+        bookingDate:
+          bookingData.bookingDate ||
+          bookingData.createdAt ||
+          new Date(),
+
+        status:
+          bookingData.status ||
+          "Confirmed",
+
+        emailSent: false,
+      };
+
+      console.log(
+        "FINAL BOOKING DATA:"
+      );
+
+      console.log(
+        finalBookingData
+      );
+
+      // =================================================
+      // SAVE TO ADMIN MONGODB
       // =================================================
 
       const booking =
         await AdminBookingModel.create(
-          bookingData
+          finalBookingData
         );
 
       console.log(
-        "Booking stored successfully:",
+        "BOOKING STORED SUCCESSFULLY:"
+      );
+
+      console.log(
         booking._id
       );
 
       // =================================================
-      // RESPONSE
+      // SUCCESS RESPONSE
       // =================================================
 
       return res.status(201).json({
@@ -271,7 +379,8 @@ router.post(
         alreadyExists: false,
         message:
           "Booking stored successfully",
-        booking: booking,
+        booking:
+          booking,
       });
 
     } catch (error) {
@@ -281,7 +390,7 @@ router.post(
       );
 
       // =================================================
-      // DUPLICATE KEY PROTECTION
+      // DUPLICATE KEY
       // =================================================
 
       if (
@@ -295,11 +404,33 @@ router.post(
         });
       }
 
+      // =================================================
+      // VALIDATION ERROR
+      // =================================================
+
+      if (
+        error.name ===
+        "ValidationError"
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Booking validation failed",
+          error:
+            error.message,
+        });
+      }
+
+      // =================================================
+      // OTHER ERROR
+      // =================================================
+
       return res.status(500).json({
         success: false,
         message:
           "Failed to store booking",
-        error: error.message,
+        error:
+          error.message,
       });
     }
   }
@@ -316,10 +447,6 @@ router.patch(
       const { status } =
         req.body;
 
-      // =================================================
-      // VALIDATE STATUS
-      // =================================================
-
       if (
         ![
           "Confirmed",
@@ -333,25 +460,18 @@ router.patch(
         });
       }
 
-      // =================================================
-      // UPDATE
-      // =================================================
-
       const booking =
         await AdminBookingModel.findByIdAndUpdate(
           req.params.id,
           {
-            status: status,
+            status:
+              status,
           },
           {
             new: true,
             runValidators: true,
           }
         );
-
-      // =================================================
-      // NOT FOUND
-      // =================================================
 
       if (!booking) {
         return res.status(404).json({
@@ -365,7 +485,8 @@ router.patch(
         success: true,
         message:
           "Booking status updated successfully",
-        booking: booking,
+        booking:
+          booking,
       });
 
     } catch (error) {
@@ -378,7 +499,8 @@ router.patch(
         success: false,
         message:
           "Failed to update booking status",
-        error: error.message,
+        error:
+          error.message,
       });
     }
   }
@@ -396,10 +518,6 @@ router.delete(
         await AdminBookingModel.findByIdAndDelete(
           req.params.id
         );
-
-      // =================================================
-      // NOT FOUND
-      // =================================================
 
       if (!booking) {
         return res.status(404).json({
@@ -425,7 +543,8 @@ router.delete(
         success: false,
         message:
           "Failed to delete booking",
-        error: error.message,
+        error:
+          error.message,
       });
     }
   }
