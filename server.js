@@ -18,28 +18,26 @@ const allowedOrigins = [
   // Admin Frontend
   "https://event-admin-one.vercel.app",
 
-  // User Frontend
+  // Current User Frontend
   "https://event-user-one.vercel.app",
 
-  // Older User Frontend
+  // Old User Frontend
   "https://eventuser-two.vercel.app",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests without origin
-      // Example: Postman, browser direct request
+      // Allow Postman / direct browser requests
       if (!origin) {
         return callback(null, true);
       }
 
-      // Allow registered frontend origins
+      // Allow known frontend URLs
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      // Block unknown origins
       console.log("Blocked CORS origin:", origin);
 
       return callback(null, false);
@@ -67,7 +65,11 @@ app.use(
 // BODY PARSER
 // =====================================================
 
-app.use(express.json({ limit: "10mb" }));
+app.use(
+  express.json({
+    limit: "10mb",
+  })
+);
 
 app.use(
   express.urlencoded({
@@ -102,7 +104,7 @@ app.use("/events", eventRoutes);
 // =====================================================
 
 app.get("/", (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: "Eventora Admin API is working!",
   });
