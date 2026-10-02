@@ -1,8 +1,8 @@
+
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
-
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -10,73 +10,86 @@ const transporter = nodemailer.createTransport({
 });
 
 // =====================================================
-// 1. LOGIN SUCCESS EMAIL
+// VERIFY EMAIL CONNECTION
 // =====================================================
 
-const sendLoginSuccessEmail = async (userEmail, userName) => {
+const verifyEmailConnection = async () => {
   try {
-    const mailOptions = {
-      from: `"Eventora" <${process.env.EMAIL_USER}>`,
-      to: userEmail,
+    await transporter.verify();
 
-      subject: "Login Successful - Eventora",
-
-      html: `
-        <div style="
-          font-family: Arial, sans-serif;
-          max-width: 600px;
-          margin: auto;
-          padding: 30px;
-          border: 1px solid #ddd;
-          border-radius: 10px;
-        ">
-
-          <h2 style="color:#6C3BFF;">
-            Welcome to Eventora 🎉
-          </h2>
-
-          <p>Hello <b>${userName}</b>,</p>
-
-          <p>
-            You have successfully logged in to your Eventora account.
-          </p>
-
-          <p>
-            You can now explore upcoming events, book events,
-            and manage your event activities.
-          </p>
-
-          <br>
-
-          <p>
-            Thank you for using <b>Eventora</b>.
-          </p>
-
-          <p>
-            Regards,<br>
-            <b>Eventora Team</b>
-          </p>
-
-        </div>
-      `,
-    };
-
-    const result = await transporter.sendMail(mailOptions);
-
-    console.log("Login success email sent:", result.messageId);
+    console.log("Email service is ready");
 
     return true;
-
   } catch (error) {
-    console.log("Login email error:", error.message);
+    console.log(
+      "Email connection error:",
+      error.message
+    );
 
     return false;
   }
 };
 
+// =====================================================
+// LOGIN SUCCESS EMAIL
+// =====================================================
+
+const sendLoginSuccessEmail = async (
+  userEmail,
+  userName
+) => {
+  try {
+    const mailOptions = {
+      from: `"Eventora" <${process.env.EMAIL_USER}>`,
+      to: userEmail,
+      subject: "Login Successful - Eventora",
+
+      html: `
+        <h2>Welcome to Eventora!</h2>
+
+        <p>Hello <b>${userName}</b>,</p>
+
+        <p>
+          Your login was successful.
+        </p>
+
+        <p>
+          You can now explore many exciting events
+          on Eventora.
+        </p>
+
+        <br>
+
+        <p>
+          Regards,<br>
+          <b>Eventora Team</b>
+        </p>
+      `,
+    };
+
+    const result =
+      await transporter.sendMail(mailOptions);
+
+    console.log(
+      "Login success email sent:",
+      result.messageId
+    );
+
+    return true;
+
+  } catch (error) {
+
+    console.log(
+      "Login email error:",
+      error.message
+    );
+
+    return false;
+  }
+};
 
 // =====================================================
-// 2. ADMIN REPLY EMAIL
+// ADMIN REPLY EMAIL
 // =====================================================
 
 const sendAdminReplyEmail = async (
@@ -88,63 +101,47 @@ const sendAdminReplyEmail = async (
   try {
 
     const mailOptions = {
-
       from: `"Eventora Admin" <${process.env.EMAIL_USER}>`,
-
       to: userEmail,
-
       subject: "Reply from Eventora Admin",
 
       html: `
-        <div style="
-          font-family: Arial, sans-serif;
-          max-width: 650px;
-          margin: auto;
-          padding: 30px;
-          border: 1px solid #ddd;
-          border-radius: 10px;
-        ">
+        <div
+          style="
+            font-family: Arial;
+            max-width: 650px;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+          "
+        >
 
-          <h2 style="color:#6C3BFF;">
-            Eventora Admin Reply
-          </h2>
-
-          <p>Hello <b>${userName}</b>,</p>
+          <h2>Eventora Admin Reply</h2>
 
           <p>
-            The Eventora Admin has replied to your query.
+            Hello <b>${userName}</b>,
+          </p>
+
+          <p>
+            <b>Your Message:</b>
+          </p>
+
+          <p>
+            ${originalMessage}
           </p>
 
           <hr>
 
-          <h3>Your Query</h3>
-
-          <div style="
-            background:#f5f5f5;
-            padding:15px;
-            border-radius:8px;
-          ">
-            ${originalMessage}
-          </div>
-
-          <br>
-
-          <h3>Admin Reply</h3>
-
-          <div style="
-            background:#eee8ff;
-            padding:15px;
-            border-radius:8px;
-          ">
-            ${adminReply}
-          </div>
-
-          <br>
+          <p>
+            <b>Admin Reply:</b>
+          </p>
 
           <p>
-            If you have any further questions, feel free to contact
-            the Eventora Admin.
+            ${adminReply}
           </p>
+
+          <br>
 
           <p>
             Regards,<br>
@@ -155,23 +152,29 @@ const sendAdminReplyEmail = async (
       `,
     };
 
-    const result = await transporter.sendMail(mailOptions);
+    const result =
+      await transporter.sendMail(mailOptions);
 
-    console.log("Admin reply email sent:", result.messageId);
+    console.log(
+      "Admin reply email sent:",
+      result.messageId
+    );
 
     return true;
 
   } catch (error) {
 
-    console.log("Admin reply email error:", error.message);
+    console.log(
+      "Admin reply email error:",
+      error.message
+    );
 
     return false;
   }
 };
 
-
 // =====================================================
-// 3. ORGANIZER APPROVE / REJECT EMAIL
+// ORGANIZER APPROVE / REJECT EMAIL
 // =====================================================
 
 const sendOrganizerStatusEmail = async (
@@ -184,75 +187,115 @@ const sendOrganizerStatusEmail = async (
 
   try {
 
-    let subject = "";
+    console.log(
+      "Preparing organizer email..."
+    );
 
-    let title = "";
+    console.log(
+      "To:",
+      organizerEmail
+    );
 
-    let statusColor = "";
+    console.log(
+      "Name:",
+      organizerName
+    );
+
+    console.log(
+      "Event:",
+      eventName
+    );
+
+    console.log(
+      "Status:",
+      status
+    );
+
+    let subject;
+    let title;
+    let statusColor;
 
     if (status === "Approved") {
 
-      subject = `Event Request Approved - ${eventName}`;
+      subject =
+        `Event Request Approved - ${eventName}`;
 
-      title = "Your Event Request Has Been Approved 🎉";
+      title =
+        "Your Event Request Has Been Approved 🎉";
 
       statusColor = "#16a34a";
 
     } else {
 
-      subject = `Event Request Rejected - ${eventName}`;
+      subject =
+        `Event Request Rejected - ${eventName}`;
 
-      title = "Your Event Request Has Been Rejected";
+      title =
+        "Your Event Request Has Been Rejected";
 
       statusColor = "#dc2626";
     }
 
-
     const mailOptions = {
 
-      from: `"Eventora Admin" <${process.env.EMAIL_USER}>`,
+      from:
+        `"Eventora Admin" <${process.env.EMAIL_USER}>`,
 
       to: organizerEmail,
 
       subject: subject,
 
       html: `
-        <div style="
-          font-family: Arial, sans-serif;
-          max-width: 650px;
-          margin: auto;
-          padding: 30px;
-          border: 1px solid #ddd;
-          border-radius: 10px;
-        ">
+        <div
+          style="
+            font-family: Arial, sans-serif;
+            max-width: 650px;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+          "
+        >
 
-          <h2 style="color:${statusColor};">
+          <h2
+            style="
+              color:${statusColor};
+            "
+          >
             ${title}
           </h2>
 
-          <p>Hello <b>${organizerName}</b>,</p>
-
           <p>
-            Your event request has been reviewed by the Eventora Admin.
+            Hello <b>${organizerName}</b>,
           </p>
 
-          <div style="
-            background:#f5f5f5;
-            padding:20px;
-            border-radius:8px;
-          ">
+          <p>
+            Your event request has been reviewed
+            by the Eventora Admin.
+          </p>
+
+          <div
+            style="
+              background:#f5f5f5;
+              padding:20px;
+              border-radius:8px;
+            "
+          >
 
             <p>
-              <b>Event Name:</b> ${eventName}
+              <b>Event Name:</b>
+              ${eventName}
             </p>
 
             <p>
               <b>Status:</b>
 
-              <span style="
-                color:${statusColor};
-                font-weight:bold;
-              ">
+              <span
+                style="
+                  color:${statusColor};
+                  font-weight:bold;
+                "
+              >
                 ${status}
               </span>
             </p>
@@ -264,13 +307,17 @@ const sendOrganizerStatusEmail = async (
               ? `
                 <br>
 
-                <h3>Admin Message</h3>
+                <h3>
+                  Admin Message
+                </h3>
 
-                <div style="
-                  background:#eee8ff;
-                  padding:15px;
-                  border-radius:8px;
-                ">
+                <div
+                  style="
+                    background:#eee8ff;
+                    padding:15px;
+                    border-radius:8px;
+                  "
+                >
                   ${adminMessage}
                 </div>
               `
@@ -283,14 +330,14 @@ const sendOrganizerStatusEmail = async (
             status === "Approved"
               ? `
                 <p>
-                  Congratulations! Your event request has been approved.
-                  You can continue with the next steps from your account.
+                  Congratulations!
+                  Your event request has been approved.
                 </p>
               `
               : `
                 <p>
-                  Your event request was not approved at this time.
-                  Please check the admin message for more information.
+                  Your event request was not approved
+                  at this time.
                 </p>
               `
           }
@@ -304,8 +351,12 @@ const sendOrganizerStatusEmail = async (
       `,
     };
 
+    console.log(
+      "Sending organizer email..."
+    );
 
-    const result = await transporter.sendMail(mailOptions);
+    const result =
+      await transporter.sendMail(mailOptions);
 
     console.log(
       "Organizer status email sent:",
@@ -325,8 +376,12 @@ const sendOrganizerStatusEmail = async (
   }
 };
 
+// =====================================================
+// EXPORT
+// =====================================================
 
 module.exports = {
+  verifyEmailConnection,
   sendLoginSuccessEmail,
   sendAdminReplyEmail,
   sendOrganizerStatusEmail,
