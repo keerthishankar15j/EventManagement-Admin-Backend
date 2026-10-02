@@ -1,39 +1,22 @@
 const express = require("express");
-
-const BookingModel = require("../Model/BookingModel");
+const BookTicketModel = require("../Model/BookTicketModel");
 
 const router = express.Router();
 
-// =====================================================
-// GET ALL BOOKINGS
-// =====================================================
-
 router.get("/getbookings", async (req, res) => {
   try {
-    console.log("GET /bookings/getbookings called");
-
-    const bookings = await BookingModel
+    const bookings = await BookTicketModel
       .find({})
-      .sort({
-        createdAt: -1,
-      })
+      .sort({ createdAt: -1 })
       .lean();
-
-    console.log(
-      "Bookings found:",
-      bookings.length
-    );
 
     return res.status(200).json({
       success: true,
       count: bookings.length,
-      bookings: bookings,
+      bookings,
     });
   } catch (error) {
-    console.error(
-      "BOOKING FETCH ERROR:",
-      error
-    );
+    console.error("BOOKING FETCH ERROR:", error);
 
     return res.status(500).json({
       success: false,
