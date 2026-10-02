@@ -1,5 +1,7 @@
 const express = require("express");
 const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 
 const eventModel = require("../Model/EventModel");
 
@@ -50,7 +52,7 @@ router.post("/create", upload.single("image"), async (req, res) => {
       });
     }
 
-    // Convert image to Base64
+    // Convert uploaded image to Base64
     const imageBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString(
       "base64"
     )}`;
@@ -104,7 +106,6 @@ router.get("/getevents", async (req, res) => {
 
     const updatedEvents = events.map((event) => ({
       ...event.toObject(),
-
       imageUrl: `${baseUrl}/events/image/${event._id}`,
     }));
 
@@ -149,13 +150,11 @@ router.get("/image/:id", async (req, res) => {
     const image = event.image;
 
     console.log("IMAGE TYPE:", typeof image);
-    console.log("IMAGE START:", String(image).substring(0, 100));
+    console.log("IMAGE VALUE:", image);
 
-    // =================================================
+    // =====================================================
     // CASE 1: BASE64 DATA URL
-    // Example:
-    // data:image/jpeg;base64,/9j/4AAQSkZJRg...
-    // =================================================
+    // =====================================================
 
     if (
       typeof image === "string" &&
@@ -173,7 +172,9 @@ router.get("/image/:id", async (req, res) => {
       const header = image.substring(0, commaIndex);
       const base64Data = image.substring(commaIndex + 1);
 
-      const mimeType = header.split(";")[0].replace("data:", "");
+      const mimeType = header
+        .split(";")[0]
+        .replace("data:", "");
 
       const imageBuffer = Buffer.from(base64Data, "base64");
 
@@ -184,23 +185,84 @@ router.get("/image/:id", async (req, res) => {
       return res.send(imageBuffer);
     }
 
-    // =================================================
-    // CASE 2: RAW BASE64
-    // =================================================
+    // =====================================================
+    // CASE 2: OLD UPLOADS PATH
+    // Example:
+    // uploads/1788679151224-263672933.webp
+    // =====================================================
 
     if (
       typeof image === "string" &&
-      !image.startsWith("http://") &&
-      !image.startsWith("https://") &&
+      image.startsWith("uploads/")
+    ) {
+      const filePath = path.join(process.cwd(), image);
+
+      console.log("IMAGE FILE PATH:", filePath);
+
+      if (!fs.existsSync(filePath)) {
+        console.log("IMAGE FILE NOT FOUND:", filePath);
+
+        return res.status(404).json({
+          success: false,
+          message: "Image file not found on server",
+          path: image,
+        });
+      }
+
+      const extension = path
+        .extname(filePath)
+        .toLowerCase();
+
+      let contentType = "application/octet-stream";
+
+      if (
+        extension === ".jpg" ||
+        extension === ".jpeg"
+      ) {
+        contentType = "image/jpeg";
+      } else if (extension === ".png") {
+        contentType = "image/png";
+      } else if (extension === ".webp") {
+        contentType = "image/webp";
+      } else if (extension === ".gif") {
+        contentType = "image/gif";
+      }
+
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=86400");
+
+      return res.sendFile(path.resolve(filePath));
+    }
+
+    // =====================================================
+    // CASE 3: FULL IMAGE URL
+    // =====================================================
+
+    if (
+      typeof image === "string" &&
+      (
+        image.startsWith("http://") ||
+        image.startsWith("https://")
+      )
+    ) {
+      return res.redirect(
+        image.replace("http://", "https://")
+      );
+    }
+
+    // =====================================================
+    // CASE 4: RAW BASE64
+    // =====================================================
+
+    if (
+      typeof image === "string" &&
       image.length > 100
     ) {
       try {
         const imageBuffer = Buffer.from(image, "base64");
 
         if (imageBuffer.length > 0) {
-          // Detect image type from magic bytes
-
-          let mimeType = "image/jpeg";
+          let contentType = "image/jpeg";
 
           // JPEG
           if (
@@ -208,7 +270,7 @@ router.get("/image/:id", async (req, res) => {
             imageBuffer[1] === 0xd8 &&
             imageBuffer[2] === 0xff
           ) {
-            mimeType = "image/jpeg";
+            contentType = "image/jpeg";
           }
 
           // PNG
@@ -218,14 +280,7 @@ router.get("/image/:id", async (req, res) => {
             imageBuffer[2] === 0x4e &&
             imageBuffer[3] === 0x47
           ) {
-            mimeType = "image/png";
-          }
-
-          // GIF
-          else if (
-            imageBuffer.toString("ascii", 0, 3) === "GIF"
-          ) {
-            mimeType = "image/gif";
+            contentType = "image/png";
           }
 
           // WEBP
@@ -233,35 +288,25 @@ router.get("/image/:id", async (req, res) => {
             imageBuffer.toString("ascii", 0, 4) === "RIFF" &&
             imageBuffer.toString("ascii", 8, 12) === "WEBP"
           ) {
-            mimeType = "image/webp";
+            contentType = "image/webp";
           }
 
-          res.setHeader("Content-Type", mimeType);
-          res.setHeader("Content-Length", imageBuffer.length);
-          res.setHeader("Cache-Control", "public, max-age=86400");
+          res.setHeader("Content-Type", contentType);
+          res.setHeader(
+            "Content-Length",
+            imageBuffer.length
+          );
 
           return res.send(imageBuffer);
         }
       } catch (error) {
-        console.log("RAW BASE64 ERROR:", error.message);
+        console.log("BASE64 ERROR:", error.message);
       }
     }
 
-    // =================================================
-    // CASE 3: IMAGE URL
-    // =================================================
-
-    if (
-      typeof image === "string" &&
-      (image.startsWith("http://") ||
-        image.startsWith("https://"))
-    ) {
-      return res.redirect(image.replace("http://", "https://"));
-    }
-
-    // =================================================
+    // =====================================================
     // UNKNOWN FORMAT
-    // =================================================
+    // =====================================================
 
     return res.status(500).json({
       success: false,
@@ -272,7 +317,7 @@ router.get("/image/:id", async (req, res) => {
   } catch (error) {
     console.error("GET IMAGE ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -296,9 +341,7 @@ router.get("/get/:id", async (req, res) => {
 
     const eventData = event.toObject();
 
-    eventData.imageUrl = `https://${req.get("host")}/events/image/${
-      event._id
-    }`;
+    eventData.imageUrl = `https://${req.get("host")}/events/image/${event._id}`;
 
     delete eventData.image;
 
@@ -353,7 +396,7 @@ router.put("/update/:id", upload.single("image"), async (req, res) => {
     event.tickets = tickets;
     event.ticketPrice = ticketPrice;
 
-    // If new image uploaded
+    // New image uploaded
     if (req.file) {
       event.image = `data:${req.file.mimetype};base64,${req.file.buffer.toString(
         "base64"
