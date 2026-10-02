@@ -12,6 +12,7 @@ const router = express.Router();
 // =====================================================
 
 const upload = multer({
+
   storage: multer.memoryStorage(),
 
   limits: {
@@ -21,12 +22,17 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
 
     if (file.mimetype.startsWith("image/")) {
+
       cb(null, true);
+
     } else {
+
       cb(new Error("Only image files are allowed"));
+
     }
 
   }
+
 });
 
 
@@ -45,10 +51,14 @@ router.post(
       console.log("=================================");
       console.log("CREATE EVENT");
       console.log("BODY:", req.body);
+
       console.log(
         "FILE:",
-        req.file ? req.file.originalname : "NO FILE"
+        req.file
+          ? req.file.originalname
+          : "NO FILE"
       );
+
       console.log("=================================");
 
 
@@ -65,9 +75,9 @@ router.post(
       } = req.body;
 
 
-      // -------------------------------------------------
+      // =================================================
       // VALIDATION
-      // -------------------------------------------------
+      // =================================================
 
       if (
         !name ||
@@ -84,16 +94,20 @@ router.post(
       ) {
 
         return res.status(400).json({
+
           success: false,
-          message: "All event fields are required"
+
+          message:
+            "All event fields are required"
+
         });
 
       }
 
 
-      // -------------------------------------------------
-      // IMAGE BASE64
-      // -------------------------------------------------
+      // =================================================
+      // IMAGE TO BASE64
+      // =================================================
 
       const imageBase64 =
         `data:${req.file.mimetype};base64,${req.file.buffer.toString(
@@ -101,33 +115,34 @@ router.post(
         )}`;
 
 
-      // -------------------------------------------------
+      // =================================================
       // CREATE EVENT
-      // -------------------------------------------------
+      // =================================================
 
-      const newEvent = new eventModel({
+      const newEvent =
+        new eventModel({
 
-        name: name.trim(),
+          name: name.trim(),
 
-        organizer: organizer.trim(),
+          organizer: organizer.trim(),
 
-        date,
+          date,
 
-        time,
+          time,
 
-        location: location.trim(),
+          location: location.trim(),
 
-        description: description.trim(),
+          description: description.trim(),
 
-        category,
+          category,
 
-        tickets: Number(tickets),
+          tickets: Number(tickets),
 
-        ticketPrice: Number(ticketPrice),
+          ticketPrice: Number(ticketPrice),
 
-        image: imageBase64
+          image: imageBase64
 
-      });
+        });
 
 
       const savedEvent =
@@ -144,7 +159,8 @@ router.post(
 
         success: true,
 
-        message: "Event created successfully",
+        message:
+          "Event created successfully",
 
         data: savedEvent
 
@@ -156,6 +172,7 @@ router.post(
         "CREATE EVENT ERROR:",
         error
       );
+
 
       return res.status(500).json({
 
@@ -177,8 +194,8 @@ router.post(
 // GET ALL EVENTS
 // =====================================================
 //
-// This API does NOT send the Base64 image.
-// It sends an imageUrl instead.
+// Base64 image is NOT returned here.
+// Only imageUrl is returned.
 // =====================================================
 
 router.get(
@@ -197,12 +214,17 @@ router.get(
           });
 
 
-      // IMPORTANT:
-      // Get API base URL from request
+      // =================================================
+      // API BASE URL
+      // =================================================
 
       const baseUrl =
-        `${req.protocol}://${req.get("host")}`;
+        `https://${req.get("host")}`;
 
+
+      // =================================================
+      // FORMAT EVENTS
+      // =================================================
 
       const formattedEvents =
         events.map((event) => {
@@ -229,9 +251,11 @@ router.get(
 
         success: true,
 
-        count: formattedEvents.length,
+        count:
+          formattedEvents.length,
 
-        data: formattedEvents
+        data:
+          formattedEvents
 
       });
 
@@ -247,9 +271,11 @@ router.get(
 
         success: false,
 
-        message: "Failed to get events",
+        message:
+          "Failed to get events",
 
-        error: error.message
+        error:
+          error.message
 
       });
 
@@ -270,11 +296,17 @@ router.get(
 
     try {
 
+      console.log("=================================");
       console.log(
         "IMAGE REQUEST:",
         req.params.id
       );
+      console.log("=================================");
 
+
+      // =================================================
+      // FIND EVENT
+      // =================================================
 
       const event =
         await eventModel
@@ -282,9 +314,9 @@ router.get(
           .select("image");
 
 
-      // -------------------------------------------------
+      // =================================================
       // EVENT NOT FOUND
-      // -------------------------------------------------
+      // =================================================
 
       if (!event) {
 
@@ -292,16 +324,17 @@ router.get(
 
           success: false,
 
-          message: "Event not found"
+          message:
+            "Event not found"
 
         });
 
       }
 
 
-      // -------------------------------------------------
+      // =================================================
       // IMAGE NOT FOUND
-      // -------------------------------------------------
+      // =================================================
 
       if (!event.image) {
 
@@ -309,7 +342,8 @@ router.get(
 
           success: false,
 
-          message: "Image not found"
+          message:
+            "Image not found"
 
         });
 
@@ -317,91 +351,254 @@ router.get(
 
 
       console.log(
-        "IMAGE FOUND FOR:",
-        req.params.id
+        "IMAGE FOUND"
+      );
+
+      console.log(
+        "IMAGE TYPE:",
+        typeof event.image
       );
 
 
-      // -------------------------------------------------
-      // CHECK BASE64 FORMAT
-      // -------------------------------------------------
+      // =================================================
+      // CASE 1
+      // IMAGE IS BASE64 DATA URL
+      // =================================================
+      //
+      // Example:
+      //
+      // data:image/jpeg;base64,/9j/4AAQ...
+      //
+      // =================================================
 
-      const matches =
-        event.image.match(
-          /^data:(.+);base64,(.+)$/
+      if (
+        typeof event.image === "string" &&
+        event.image.startsWith("data:image/")
+      ) {
+
+        console.log(
+          "IMAGE FORMAT: BASE64 DATA URL"
         );
 
 
-      if (!matches) {
+        const matches =
+          event.image.match(
+            /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/
+          );
 
-        return res.status(500).json({
 
-          success: false,
+        if (!matches) {
 
-          message:
-            "Image is not stored in valid Base64 format"
+          return res.status(500).json({
 
-        });
+            success: false,
+
+            message:
+              "Invalid Base64 image format"
+
+          });
+
+        }
+
+
+        const mimeType =
+          matches[1];
+
+
+        const base64Data =
+          matches[2];
+
+
+        const imageBuffer =
+          Buffer.from(
+            base64Data,
+            "base64"
+          );
+
+
+        res.setHeader(
+          "Content-Type",
+          mimeType
+        );
+
+
+        res.setHeader(
+          "Content-Length",
+          imageBuffer.length
+        );
+
+
+        res.setHeader(
+          "Cache-Control",
+          "public, max-age=86400"
+        );
+
+
+        return res.send(
+          imageBuffer
+        );
 
       }
 
 
-      // -------------------------------------------------
-      // GET MIME TYPE
-      // -------------------------------------------------
+      // =================================================
+      // CASE 2
+      // IMAGE IS RAW BASE64
+      // =================================================
+      //
+      // Example:
+      //
+      // /9j/4AAQSkZJRg...
+      //
+      // =================================================
 
-      const mimeType =
-        matches[1];
+      if (
+        typeof event.image === "string"
+      ) {
+
+        const possibleBase64 =
+          event.image.trim();
 
 
-      // -------------------------------------------------
-      // GET BASE64 DATA
-      // -------------------------------------------------
-
-      const base64Data =
-        matches[2];
+        const isBase64 =
+          /^[A-Za-z0-9+/]+={0,2}$/.test(
+            possibleBase64
+          );
 
 
-      // -------------------------------------------------
-      // CONVERT BASE64 TO BUFFER
-      // -------------------------------------------------
+        if (isBase64) {
 
-      const imageBuffer =
-        Buffer.from(
-          base64Data,
-          "base64"
+          console.log(
+            "IMAGE FORMAT: RAW BASE64"
+          );
+
+
+          const imageBuffer =
+            Buffer.from(
+              possibleBase64,
+              "base64"
+            );
+
+
+          res.setHeader(
+            "Content-Type",
+            "image/jpeg"
+          );
+
+
+          res.setHeader(
+            "Content-Length",
+            imageBuffer.length
+          );
+
+
+          res.setHeader(
+            "Cache-Control",
+            "public, max-age=86400"
+          );
+
+
+          return res.send(
+            imageBuffer
+          );
+
+        }
+
+      }
+
+
+      // =================================================
+      // CASE 3
+      // IMAGE IS URL
+      // =================================================
+
+      if (
+        typeof event.image === "string" &&
+        (
+          event.image.startsWith("http://") ||
+          event.image.startsWith("https://")
+        )
+      ) {
+
+        console.log(
+          "IMAGE FORMAT: URL"
         );
 
 
-      // -------------------------------------------------
-      // RESPONSE HEADERS
-      // -------------------------------------------------
+        const imageUrl =
+          event.image.replace(
+            "http://",
+            "https://"
+          );
 
-      res.setHeader(
-        "Content-Type",
-        mimeType
+
+        return res.redirect(
+          imageUrl
+        );
+
+      }
+
+
+      // =================================================
+      // CASE 4
+      // IMAGE IS BUFFER
+      // =================================================
+
+      if (
+        Buffer.isBuffer(event.image)
+      ) {
+
+        console.log(
+          "IMAGE FORMAT: BUFFER"
+        );
+
+
+        res.setHeader(
+          "Content-Type",
+          "image/jpeg"
+        );
+
+
+        res.setHeader(
+          "Content-Length",
+          event.image.length
+        );
+
+
+        res.setHeader(
+          "Cache-Control",
+          "public, max-age=86400"
+        );
+
+
+        return res.send(
+          event.image
+        );
+
+      }
+
+
+      // =================================================
+      // UNKNOWN IMAGE FORMAT
+      // =================================================
+
+      console.log(
+        "UNKNOWN IMAGE FORMAT:"
+      );
+
+      console.log(
+        event.image
       );
 
 
-      res.setHeader(
-        "Content-Length",
-        imageBuffer.length
-      );
+      return res.status(500).json({
 
+        success: false,
 
-      res.setHeader(
-        "Cache-Control",
-        "public, max-age=86400"
-      );
+        message:
+          "Unsupported image format"
 
-
-      // -------------------------------------------------
-      // SEND IMAGE
-      // -------------------------------------------------
-
-      return res.send(
-        imageBuffer
-      );
+      });
 
     } catch (error) {
 
@@ -452,7 +649,8 @@ router.get(
 
           success: false,
 
-          message: "Event not found"
+          message:
+            "Event not found"
 
         });
 
@@ -463,7 +661,8 @@ router.get(
 
         success: true,
 
-        data: event
+        data:
+          event
 
       });
 
@@ -507,20 +706,24 @@ router.put(
 
       console.log("=================================");
       console.log("UPDATE EVENT");
+
       console.log(
         "ID:",
         req.params.id
       );
+
       console.log(
         "BODY:",
         req.body
       );
+
       console.log(
         "FILE:",
         req.file
           ? req.file.originalname
           : "NO FILE"
       );
+
       console.log("=================================");
 
 
@@ -537,9 +740,9 @@ router.put(
       } = req.body;
 
 
-      // -------------------------------------------------
+      // =================================================
       // FIND EVENT
-      // -------------------------------------------------
+      // =================================================
 
       const existingEvent =
         await eventModel.findById(
@@ -561,67 +764,85 @@ router.put(
       }
 
 
-      // -------------------------------------------------
+      // =================================================
       // UPDATE FIELDS
-      // -------------------------------------------------
+      // =================================================
 
       if (name !== undefined) {
+
         existingEvent.name =
           name.trim();
+
       }
 
 
       if (organizer !== undefined) {
+
         existingEvent.organizer =
           organizer.trim();
+
       }
 
 
       if (date !== undefined) {
+
         existingEvent.date =
           date;
+
       }
 
 
       if (time !== undefined) {
+
         existingEvent.time =
           time;
+
       }
 
 
       if (location !== undefined) {
+
         existingEvent.location =
           location.trim();
+
       }
 
 
       if (description !== undefined) {
+
         existingEvent.description =
           description.trim();
+
       }
 
 
       if (category !== undefined) {
+
         existingEvent.category =
           category;
+
       }
 
 
       if (tickets !== undefined) {
+
         existingEvent.tickets =
           Number(tickets);
+
       }
 
 
       if (ticketPrice !== undefined) {
+
         existingEvent.ticketPrice =
           Number(ticketPrice);
+
       }
 
 
-      // -------------------------------------------------
+      // =================================================
       // UPDATE IMAGE
-      // -------------------------------------------------
+      // =================================================
 
       if (req.file) {
 
@@ -633,9 +854,9 @@ router.put(
       }
 
 
-      // -------------------------------------------------
-      // SAVE
-      // -------------------------------------------------
+      // =================================================
+      // SAVE EVENT
+      // =================================================
 
       const updatedEvent =
         await existingEvent.save();
@@ -654,7 +875,8 @@ router.put(
         message:
           "Event updated successfully",
 
-        data: updatedEvent
+        data:
+          updatedEvent
 
       });
 
