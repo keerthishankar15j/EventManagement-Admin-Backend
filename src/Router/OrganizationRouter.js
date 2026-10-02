@@ -5,9 +5,8 @@ const router = express.Router();
 const {
   getOrganizationRequests,
   getSingleOrganizationRequest,
-} = require(
-  "../Controller/OrganizationController"
-);
+  updateOrganizationRequestStatus,
+} = require("../Controller/OrganizationController");
 
 // =====================================================
 // GET ALL ORGANIZER REQUESTS
@@ -27,6 +26,16 @@ router.get(
 router.get(
   "/requests/:id",
   getSingleOrganizationRequest
+);
+
+// =====================================================
+// APPROVE / REJECT ORGANIZER REQUEST
+// PUT /organization/requests/:id/status
+// =====================================================
+
+router.put(
+  "/requests/:id/status",
+  updateOrganizationRequestStatus
 );
 
 module.exports = router;
