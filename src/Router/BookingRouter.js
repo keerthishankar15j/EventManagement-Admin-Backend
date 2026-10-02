@@ -1,29 +1,15 @@
 const express = require("express");
-const BookTicketModel = require("../Model/BookTicketModel");
 
 const router = express.Router();
 
-router.get("/getbookings", async (req, res) => {
-  try {
-    const bookings = await BookTicketModel
-      .find({})
-      .sort({ createdAt: -1 })
-      .lean();
+router.get("/getbookings", (req, res) => {
+  console.log("BOOKING ROUTE WORKING");
 
-    return res.status(200).json({
-      success: true,
-      count: bookings.length,
-      bookings,
-    });
-  } catch (error) {
-    console.error("BOOKING FETCH ERROR:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch bookings",
-      error: error.message,
-    });
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Booking route is working!",
+    bookings: [],
+  });
 });
 
 module.exports = router;
