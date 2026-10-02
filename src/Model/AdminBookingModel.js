@@ -36,6 +36,24 @@ const AttendeeSchema = new mongoose.Schema(
 
 const AdminBookingSchema = new mongoose.Schema(
   {
+    // =================================================
+    // USER BOOKING ID
+    // =================================================
+    // This is the _id coming from User Backend booking.
+    // Used to prevent duplicate bookings in Admin DB.
+    // =================================================
+
+    sourceBookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      unique: true,
+      index: true,
+    },
+
+    // =================================================
+    // USER DETAILS
+    // =================================================
+
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       required: false,
@@ -53,6 +71,10 @@ const AdminBookingSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
+
+    // =================================================
+    // EVENT DETAILS
+    // =================================================
 
     eventId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -88,6 +110,20 @@ const AdminBookingSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // =================================================
+    // EVENT IMAGE
+    // =================================================
+
+    eventImage: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    // =================================================
+    // TICKET DETAILS
+    // =================================================
+
     ticketPrice: {
       type: Number,
       default: 0,
@@ -101,10 +137,18 @@ const AdminBookingSchema = new mongoose.Schema(
       max: 4,
     },
 
+    // =================================================
+    // ATTENDEES
+    // =================================================
+
     attendees: {
       type: [AttendeeSchema],
       default: [],
     },
+
+    // =================================================
+    // TOTAL AMOUNT
+    // =================================================
 
     totalAmount: {
       type: Number,
@@ -113,10 +157,18 @@ const AdminBookingSchema = new mongoose.Schema(
       min: 0,
     },
 
+    // =================================================
+    // BOOKING DATE
+    // =================================================
+
     bookingDate: {
       type: Date,
       default: Date.now,
     },
+
+    // =================================================
+    // STATUS
+    // =================================================
 
     status: {
       type: String,
@@ -128,6 +180,10 @@ const AdminBookingSchema = new mongoose.Schema(
 
       default: "Confirmed",
     },
+
+    // =================================================
+    // EMAIL STATUS
+    // =================================================
 
     emailSent: {
       type: Boolean,

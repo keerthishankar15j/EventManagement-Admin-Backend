@@ -1,8 +1,29 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const mongoose = require("mongoose");
 
 require("dotenv").config();
+
+// =====================================================
+// ROUTERS
+// =====================================================
+
+const eventRoutes = require(
+  "./src/Router/EventRouter"
+);
+
+const loginActivityRoutes = require(
+  "./src/Router/UserActivityRouter"
+);
+
+const userContactRoutes = require(
+  "./src/Router/UserContactRouter"
+);
+
+const OrganizationRouter = require(
+  "./src/Router/OrganizationRouter"
+);
 
 // =====================================================
 // BOOKING ROUTER
@@ -39,8 +60,7 @@ app.use(
       origin,
       callback
     ) {
-
-      // Allow Postman / browser without origin
+      // Allow Postman / server-to-server requests
       if (!origin) {
         return callback(null, true);
       }
@@ -56,6 +76,7 @@ app.use(
         origin
       );
 
+      // Do not crash server
       return callback(null, false);
     },
 
@@ -101,7 +122,6 @@ app.use(
 let isConnected = false;
 
 const connectDB = async () => {
-
   // Already connected
   if (
     isConnected &&
@@ -110,16 +130,14 @@ const connectDB = async () => {
     return;
   }
 
-  // Check MONGO_URI
+  // Check Mongo URI
   if (!process.env.MONGO_URI) {
-
     throw new Error(
       "MONGO_URI is missing in Vercel Environment Variables"
     );
   }
 
   try {
-
     await mongoose.connect(
       process.env.MONGO_URI
     );
@@ -131,7 +149,6 @@ const connectDB = async () => {
     );
 
   } catch (error) {
-
     isConnected = false;
 
     console.error(
@@ -144,15 +161,27 @@ const connectDB = async () => {
 };
 
 // =====================================================
-// ROOT
+// UPLOADS
+// =====================================================
+
+const uploadFolder = path.join(
+  __dirname,
+  "uploads"
+);
+
+app.use(
+  "/uploads",
+  express.static(uploadFolder)
+);
+
+// =====================================================
+// ROOT TEST
 // =====================================================
 
 app.get(
   "/",
   async (req, res) => {
-
     try {
-
       await connectDB();
 
       return res.status(200).json({
@@ -163,7 +192,6 @@ app.get(
       });
 
     } catch (error) {
-
       console.error(
         "ROOT ERROR:",
         error.message
@@ -180,7 +208,7 @@ app.get(
 );
 
 // =====================================================
-// BOOKING DATABASE MIDDLEWARE
+// BOOKING ROUTES
 // =====================================================
 
 app.use(
@@ -190,9 +218,7 @@ app.use(
     res,
     next
   ) => {
-
     try {
-
       await connectDB();
 
       console.log(
@@ -202,7 +228,6 @@ app.use(
       next();
 
     } catch (error) {
-
       console.error(
         "BOOKING DATABASE ERROR:",
         error.message
@@ -219,7 +244,7 @@ app.use(
 );
 
 // =====================================================
-// BOOKING ROUTES
+// BOOKING ROUTER
 // =====================================================
 
 app.use(
@@ -228,12 +253,103 @@ app.use(
 );
 
 // =====================================================
+// EVENT ROUTES
+// =====================================================
+
+app.use(
+  "/events",
+  async (
+    req,
+    res,
+    next
+  ) => {
+    try {
+      await connectDB();
+
+      next();
+
+    } catch (error) {
+      console.error(
+        "EVENT DATABASE ERROR:",
+        error.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Database connection failed",
+        error: error.message,
+      });
+    }
+  }
+);
+
+app.use(
+  "/events",
+  eventRoutes
+);
+
+// =====================================================
+// LOGIN ACTIVITY
+// =====================================================
+
+app.use(
+  "/login-activity",
+  async (
+    req,
+    res,
+    next
+  ) => {
+    try {
+      await connectDB();
+
+      next();
+
+    } catch (error) {
+      console.error(
+        "LOGIN ACTIVITY DATABASE ERROR:",
+        error.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Database connection failed",
+        error: error.message,
+      });
+    }
+  }
+);
+
+app.use(
+  "/login-activity",
+  loginActivityRoutes
+);
+
+// =====================================================
+// USER CONTACT
+// =====================================================
+
+app.use(
+  "/user-contact",
+  userContactRoutes
+);
+
+// =====================================================
+// ORGANIZATION
+// =====================================================
+
+app.use(
+  "/organization",
+  OrganizationRouter
+);
+
+// =====================================================
 // 404
 // =====================================================
 
 app.use(
   (req, res) => {
-
     return res.status(404).json({
       success: false,
       message: "Route not found",
@@ -253,7 +369,6 @@ app.use(
     res,
     next
   ) => {
-
     console.error(
       "GLOBAL ERROR:",
       error
@@ -269,7 +384,7 @@ app.use(
 );
 
 // =====================================================
-// EXPORT
+// VERCEL
 // =====================================================
 
 module.exports = app;
