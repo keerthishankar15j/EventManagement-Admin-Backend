@@ -1,8 +1,7 @@
-
 const nodemailer = require("nodemailer");
 
 // =====================================================
-// EMAIL TRANSPORTER
+// GMAIL TRANSPORTER
 // =====================================================
 
 const transporter = nodemailer.createTransport({
@@ -15,28 +14,45 @@ const transporter = nodemailer.createTransport({
 });
 
 // =====================================================
-// VERIFY EMAIL CONNECTION
+// COMMON EMAIL FUNCTION
 // =====================================================
 
-const verifyEmailConnection = async () => {
+const sendEmail = async ({
+  to,
+  subject,
+  html,
+}) => {
   try {
-    await transporter.verify();
+    const info = await transporter.sendMail({
+      from: `"Eventora" <${process.env.EMAIL_USER}>`,
+      to: to,
+      subject: subject,
+      html: html,
+    });
 
-    console.log("Email service is ready");
+    console.log("EMAIL SENT SUCCESSFULLY");
+    console.log("To:", to);
+    console.log("Message ID:", info.messageId);
 
-    return true;
+    return {
+      success: true,
+      messageId: info.messageId,
+    };
   } catch (error) {
-    console.log(
-      "Email connection error:",
+    console.error(
+      "EMAIL SEND ERROR:",
       error.message
     );
 
-    return false;
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 };
 
 // =====================================================
-// LOGIN SUCCESS EMAIL
+// 1. LOGIN SUCCESS EMAIL
 // =====================================================
 
 const sendLoginSuccessEmail = async (
@@ -44,79 +60,182 @@ const sendLoginSuccessEmail = async (
   userName
 ) => {
   try {
-    const mailOptions = {
-      from: `"Eventora" <${process.env.EMAIL_USER}>`,
+    const html = `
+      <!DOCTYPE html>
 
-      to: userEmail,
+      <html>
+      <body
+        style="
+          margin:0;
+          padding:0;
+          background:#f7f5f0;
+          font-family:Arial,sans-serif;
+        "
+      >
 
-      subject: "Login Successful - Eventora",
-
-      html: `
         <div
           style="
-            font-family: Arial, sans-serif;
-            max-width: 650px;
-            margin: auto;
-            padding: 30px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            background: #ffffff;
+            max-width:600px;
+            margin:40px auto;
+            background:#ffffff;
+            border-radius:16px;
+            overflow:hidden;
+            box-shadow:0 8px 30px rgba(0,0,0,0.08);
           "
         >
 
-          <h2 style="color:#6C3BFF;">
-            Welcome to Eventora!
-          </h2>
+          <!-- HEADER -->
 
-          <p>
-            Hello <b>${userName}</b>,
-          </p>
+          <div
+            style="
+              background:#0b1020;
+              padding:30px;
+              text-align:center;
+            "
+          >
 
-          <p>
-            Your login was successful.
-          </p>
+            <h1
+              style="
+                margin:0;
+                color:#ffffff;
+                font-size:28px;
+              "
+            >
+              EVENTORA
+            </h1>
 
-          <p>
-            You can now explore many exciting
-            events on Eventora.
-          </p>
+            <p
+              style="
+                color:#cccccc;
+                margin:8px 0 0;
+              "
+            >
+              Welcome Back
+            </p>
 
-          <br>
+          </div>
 
-          <p>
-            Regards,<br>
-            <b>Eventora Team</b>
-          </p>
+
+          <!-- CONTENT -->
+
+          <div style="padding:30px;">
+
+            <h2
+              style="
+                color:#0b1020;
+                margin-top:0;
+              "
+            >
+              Login Successful 🎉
+            </h2>
+
+            <p
+              style="
+                color:#555;
+                font-size:15px;
+                line-height:1.6;
+              "
+            >
+              Hi <strong>${userName}</strong>,
+            </p>
+
+            <p
+              style="
+                color:#555;
+                font-size:15px;
+                line-height:1.6;
+              "
+            >
+              You have successfully logged in to your
+              Eventora account.
+            </p>
+
+            <div
+              style="
+                margin-top:25px;
+                padding:20px;
+                background:#f1edff;
+                border-radius:12px;
+              "
+            >
+
+              <p
+                style="
+                  margin:0;
+                  color:#555;
+                  line-height:1.6;
+                "
+              >
+                You can now explore events, book tickets,
+                manage your bookings and discover exciting
+                experiences on Eventora.
+              </p>
+
+            </div>
+
+            <p
+              style="
+                margin-top:25px;
+                color:#777;
+                font-size:13px;
+              "
+            >
+              If this login was not made by you, please
+              secure your account immediately.
+            </p>
+
+          </div>
+
+
+          <!-- FOOTER -->
+
+          <div
+            style="
+              background:#0b1020;
+              padding:18px;
+              text-align:center;
+            "
+          >
+
+            <p
+              style="
+                margin:0;
+                color:#ffffff;
+                font-size:13px;
+              "
+            >
+              Welcome to Eventora.
+            </p>
+
+          </div>
 
         </div>
-      `,
-    };
 
-    const result =
-      await transporter.sendMail(
-        mailOptions
-      );
+      </body>
+      </html>
+    `;
 
-    console.log(
-      "Login success email sent:",
-      result.messageId
-    );
-
-    return true;
+    return await sendEmail({
+      to: userEmail,
+      subject: "Login Successful - Welcome to Eventora",
+      html: html,
+    });
 
   } catch (error) {
-
-    console.log(
-      "Login email error:",
+    console.error(
+      "LOGIN EMAIL ERROR:",
       error.message
     );
 
-    return false;
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 };
 
 // =====================================================
-// ADMIN REPLY EMAIL
+// 2. ADMIN MESSAGE REPLY EMAIL
 // =====================================================
 
 const sendAdminReplyEmail = async (
@@ -126,297 +245,398 @@ const sendAdminReplyEmail = async (
   adminReply
 ) => {
   try {
+    const html = `
+      <!DOCTYPE html>
 
-    const mailOptions = {
-      from:
-        `"Eventora Admin" <${process.env.EMAIL_USER}>`,
+      <html>
+      <body
+        style="
+          margin:0;
+          padding:0;
+          background:#f7f5f0;
+          font-family:Arial,sans-serif;
+        "
+      >
 
-      to: userEmail,
-
-      subject:
-        "Reply from Eventora Admin",
-
-      html: `
         <div
           style="
-            font-family: Arial, sans-serif;
-            max-width: 650px;
-            margin: auto;
-            padding: 30px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            background: #ffffff;
+            max-width:650px;
+            margin:40px auto;
+            background:#ffffff;
+            border-radius:16px;
+            overflow:hidden;
+            box-shadow:0 8px 30px rgba(0,0,0,0.08);
           "
         >
 
-          <h2 style="color:#6C3BFF;">
-            Eventora Admin Reply
-          </h2>
-
-          <p>
-            Hello <b>${userName}</b>,
-          </p>
-
-          <p>
-            <b>Your Message:</b>
-          </p>
-
-          <p>
-            ${originalMessage}
-          </p>
-
-          <hr>
-
-          <p>
-            <b>Admin Reply:</b>
-          </p>
-
-          <p>
-            ${adminReply}
-          </p>
-
-          <br>
-
-          <p>
-            Regards,<br>
-            <b>Eventora Admin Team</b>
-          </p>
-
-        </div>
-      `,
-    };
-
-    const result =
-      await transporter.sendMail(
-        mailOptions
-      );
-
-    console.log(
-      "Admin reply email sent:",
-      result.messageId
-    );
-
-    return true;
-
-  } catch (error) {
-
-    console.log(
-      "Admin reply email error:",
-      error.message
-    );
-
-    return false;
-  }
-};
-
-// =====================================================
-// ORGANIZER APPROVE / REJECT EMAIL
-// =====================================================
-
-const sendOrganizerStatusEmail = async (
-  organizerEmail,
-  organizerName,
-  eventName,
-  status,
-  adminMessage = ""
-) => {
-
-  try {
-
-    console.log(
-      "Preparing organizer email..."
-    );
-
-    console.log(
-      "To:",
-      organizerEmail
-    );
-
-    console.log(
-      "Name:",
-      organizerName
-    );
-
-    console.log(
-      "Event:",
-      eventName
-    );
-
-    console.log(
-      "Status:",
-      status
-    );
-
-    let subject;
-    let title;
-    let statusColor;
-
-    if (status === "Approved") {
-
-      subject =
-        `Event Request Approved - ${eventName}`;
-
-      title =
-        "Your Event Request Has Been Approved 🎉";
-
-      statusColor = "#16a34a";
-
-    } else {
-
-      subject =
-        `Event Request Rejected - ${eventName}`;
-
-      title =
-        "Your Event Request Has Been Rejected";
-
-      statusColor = "#dc2626";
-    }
-
-    const mailOptions = {
-
-      from:
-        `"Eventora Admin" <${process.env.EMAIL_USER}>`,
-
-      to: organizerEmail,
-
-      subject: subject,
-
-      html: `
-        <div
-          style="
-            font-family: Arial, sans-serif;
-            max-width: 650px;
-            margin: auto;
-            padding: 30px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            background: #ffffff;
-          "
-        >
-
-          <h2
-            style="
-              color:${statusColor};
-            "
-          >
-            ${title}
-          </h2>
-
-          <p>
-            Hello <b>${organizerName}</b>,
-          </p>
-
-          <p>
-            Your event request has been reviewed
-            by the Eventora Admin.
-          </p>
+          <!-- HEADER -->
 
           <div
             style="
-              background:#f5f5f5;
-              padding:20px;
-              border-radius:8px;
+              background:#0b1020;
+              padding:30px;
+              text-align:center;
             "
           >
 
-            <p>
-              <b>Event Name:</b>
-              ${eventName}
-            </p>
+            <h1
+              style="
+                margin:0;
+                color:#ffffff;
+                font-size:28px;
+              "
+            >
+              EVENTORA
+            </h1>
 
-            <p>
-              <b>Status:</b>
-
-              <span
-                style="
-                  color:${statusColor};
-                  font-weight:bold;
-                "
-              >
-                ${status}
-              </span>
+            <p
+              style="
+                color:#cccccc;
+                margin:8px 0 0;
+              "
+            >
+              Message Response
             </p>
 
           </div>
 
-          ${
-            adminMessage
-              ? `
-                <br>
 
-                <h3>
-                  Admin Message
-                </h3>
+          <!-- CONTENT -->
 
-                <div
-                  style="
-                    background:#eee8ff;
-                    padding:15px;
-                    border-radius:8px;
-                  "
-                >
-                  ${adminMessage}
-                </div>
-              `
-              : ""
-          }
+          <div style="padding:30px;">
 
-          <br>
+            <h2
+              style="
+                color:#0b1020;
+                margin-top:0;
+              "
+            >
+              Admin Replied to Your Message
+            </h2>
 
-          ${
-            status === "Approved"
-              ? `
-                <p>
-                  Congratulations!
-                  Your event request has been approved.
-                </p>
-              `
-              : `
-                <p>
-                  Your event request was not approved
-                  at this time.
-                </p>
-              `
-          }
+            <p
+              style="
+                color:#555;
+                font-size:15px;
+              "
+            >
+              Hi <strong>${userName}</strong>,
+            </p>
 
-          <p>
-            Regards,<br>
-            <b>Eventora Admin Team</b>
-          </p>
+            <p
+              style="
+                color:#555;
+                font-size:15px;
+                line-height:1.6;
+              "
+            >
+              The Eventora admin team has replied to
+              your message.
+            </p>
+
+
+            <!-- ORIGINAL MESSAGE -->
+
+            <div
+              style="
+                margin-top:20px;
+                padding:18px;
+                background:#f7f7f7;
+                border-radius:12px;
+                border-left:4px solid #999;
+              "
+            >
+
+              <h4
+                style="
+                  margin-top:0;
+                  color:#555;
+                "
+              >
+                Your Message
+              </h4>
+
+              <p
+                style="
+                  margin-bottom:0;
+                  color:#555;
+                  line-height:1.6;
+                "
+              >
+                ${originalMessage}
+              </p>
+
+            </div>
+
+
+            <!-- ADMIN REPLY -->
+
+            <div
+              style="
+                margin-top:20px;
+                padding:18px;
+                background:#f1edff;
+                border-radius:12px;
+                border-left:4px solid #6c3bff;
+              "
+            >
+
+              <h4
+                style="
+                  margin-top:0;
+                  color:#6c3bff;
+                "
+              >
+                Admin Reply
+              </h4>
+
+              <p
+                style="
+                  margin-bottom:0;
+                  color:#444;
+                  line-height:1.6;
+                "
+              >
+                ${adminReply}
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <!-- FOOTER -->
+
+          <div
+            style="
+              background:#0b1020;
+              padding:18px;
+              text-align:center;
+            "
+          >
+
+            <p
+              style="
+                margin:0;
+                color:#ffffff;
+                font-size:13px;
+              "
+            >
+              Eventora Admin Team
+            </p>
+
+          </div>
 
         </div>
-      `,
-    };
 
-    console.log(
-      "Sending organizer email..."
-    );
+      </body>
+      </html>
+    `;
 
-    const result =
-      await transporter.sendMail(
-        mailOptions
-      );
-
-    console.log(
-      "Organizer status email sent:",
-      result.messageId
-    );
-
-    return true;
+    return await sendEmail({
+      to: userEmail,
+      subject: "Reply from Eventora Admin",
+      html: html,
+    });
 
   } catch (error) {
-
-    console.log(
-      "Organizer status email error:",
+    console.error(
+      "ADMIN REPLY EMAIL ERROR:",
       error.message
     );
 
-    return false;
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 };
 
 // =====================================================
-// BOOKING CONFIRMATION EMAIL
+// 3. ORGANIZER REQUEST ACCEPTED EMAIL
+// =====================================================
+
+const sendOrganizerAcceptedEmail = async (
+  userEmail,
+  userName,
+  eventName
+) => {
+  try {
+    const html = `
+      <!DOCTYPE html>
+
+      <html>
+      <body
+        style="
+          margin:0;
+          padding:0;
+          background:#f7f5f0;
+          font-family:Arial,sans-serif;
+        "
+      >
+
+        <div
+          style="
+            max-width:650px;
+            margin:40px auto;
+            background:#ffffff;
+            border-radius:16px;
+            overflow:hidden;
+            box-shadow:0 8px 30px rgba(0,0,0,0.08);
+          "
+        >
+
+          <!-- HEADER -->
+
+          <div
+            style="
+              background:#0b1020;
+              padding:30px;
+              text-align:center;
+            "
+          >
+
+            <h1
+              style="
+                margin:0;
+                color:#ffffff;
+                font-size:28px;
+              "
+            >
+              EVENTORA
+            </h1>
+
+            <p
+              style="
+                color:#cccccc;
+                margin:8px 0 0;
+              "
+            >
+              Organizer Request
+            </p>
+
+          </div>
+
+
+          <!-- CONTENT -->
+
+          <div style="padding:30px;">
+
+            <h2
+              style="
+                color:#198754;
+                margin-top:0;
+              "
+            >
+              Organizer Request Accepted 🎉
+            </h2>
+
+            <p
+              style="
+                color:#555;
+                font-size:15px;
+              "
+            >
+              Hi <strong>${userName}</strong>,
+            </p>
+
+            <p
+              style="
+                color:#555;
+                font-size:15px;
+                line-height:1.6;
+              "
+            >
+              Your organizer request has been accepted
+              by the Eventora admin team.
+            </p>
+
+            <div
+              style="
+                margin-top:25px;
+                padding:20px;
+                background:#e8f8ef;
+                border-radius:12px;
+              "
+            >
+
+              <p
+                style="
+                  margin:0;
+                  color:#333;
+                  font-size:15px;
+                "
+              >
+                <strong>Event:</strong>
+                ${eventName}
+              </p>
+
+            </div>
+
+            <p
+              style="
+                margin-top:25px;
+                color:#555;
+                line-height:1.6;
+              "
+            >
+              You can now continue managing your event
+              through your organizer account.
+            </p>
+
+          </div>
+
+
+          <!-- FOOTER -->
+
+          <div
+            style="
+              background:#0b1020;
+              padding:18px;
+              text-align:center;
+            "
+          >
+
+            <p
+              style="
+                margin:0;
+                color:#ffffff;
+                font-size:13px;
+              "
+            >
+              Eventora Admin Team
+            </p>
+
+          </div>
+
+        </div>
+
+      </body>
+      </html>
+    `;
+
+    return await sendEmail({
+      to: userEmail,
+      subject:
+        "Organizer Request Accepted - Eventora",
+      html: html,
+    });
+
+  } catch (error) {
+    console.error(
+      "ORGANIZER EMAIL ERROR:",
+      error.message
+    );
+
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+};
+
+// =====================================================
+// 4. BOOKING CONFIRMATION EMAIL
 // =====================================================
 
 const sendBookingConfirmationEmail = async (
@@ -431,83 +651,40 @@ const sendBookingConfirmationEmail = async (
   totalAmount,
   bookingId
 ) => {
-
   try {
-
-    console.log(
-      "Preparing booking confirmation email..."
-    );
-
-    console.log(
-      "To:",
-      userEmail
-    );
-
-    console.log(
-      "User:",
-      userName
-    );
-
-    console.log(
-      "Event:",
-      eventName
-    );
-
-    // -------------------------------------------------
-    // FORMAT EVENT DATE
-    // -------------------------------------------------
-
-    let formattedDate = "-";
+    let formattedDate = "N/A";
 
     if (eventDate) {
-
-      formattedDate =
-        new Date(
-          eventDate
-        ).toLocaleDateString(
-          "en-IN",
-          {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          }
-        );
+      formattedDate = new Date(
+        eventDate
+      ).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
     }
 
-    // -------------------------------------------------
-    // FORMAT AMOUNTS
-    // -------------------------------------------------
+    const html = `
+      <!DOCTYPE html>
 
-    const formattedTicketPrice =
-      Number(ticketPrice || 0)
-        .toLocaleString("en-IN");
+      <html>
+      <body
+        style="
+          margin:0;
+          padding:0;
+          background:#f7f5f0;
+          font-family:Arial,sans-serif;
+        "
+      >
 
-    const formattedTotalAmount =
-      Number(totalAmount || 0)
-        .toLocaleString("en-IN");
-
-    // -------------------------------------------------
-    // EMAIL
-    // -------------------------------------------------
-
-    const mailOptions = {
-
-      from:
-        `"Eventora" <${process.env.EMAIL_USER}>`,
-
-      to: userEmail,
-
-      subject:
-        `Booking Confirmed - ${eventName}`,
-
-      html: `
         <div
           style="
-            font-family: Arial, sans-serif;
-            max-width: 680px;
-            margin: auto;
-            background: #f7f5f0;
-            padding: 30px;
+            max-width:650px;
+            margin:40px auto;
+            background:#ffffff;
+            border-radius:16px;
+            overflow:hidden;
+            box-shadow:0 8px 30px rgba(0,0,0,0.08);
           "
         >
 
@@ -515,251 +692,230 @@ const sendBookingConfirmationEmail = async (
 
           <div
             style="
-              background: linear-gradient(
-                135deg,
-                #0B1020,
-                #6C3BFF
-              );
-              padding: 28px;
-              border-radius: 14px 14px 0 0;
-              text-align: center;
-              color: white;
+              background:#0b1020;
+              padding:30px;
+              text-align:center;
             "
           >
 
             <h1
               style="
-                margin: 0;
-                font-size: 28px;
+                margin:0;
+                color:#ffffff;
+                font-size:28px;
               "
             >
-              Eventora
+              EVENTORA
             </h1>
 
             <p
               style="
-                margin: 8px 0 0;
-                font-size: 15px;
+                color:#cccccc;
+                margin:8px 0 0;
               "
             >
-              Event Booking Confirmation
+              Booking Confirmation
             </p>
 
           </div>
 
+
           <!-- CONTENT -->
 
-          <div
-            style="
-              background: white;
-              padding: 30px;
-              border-radius: 0 0 14px 14px;
-            "
-          >
+          <div style="padding:30px;">
 
             <h2
               style="
-                color: #16a34a;
-                margin-top: 0;
+                color:#198754;
+                margin-top:0;
               "
             >
-              ✓ Booking Confirmed
+              Booking Confirmed! 🎉
             </h2>
 
-            <p>
-              Hello <b>${userName}</b>,
+            <p
+              style="
+                color:#555;
+                font-size:15px;
+              "
+            >
+              Hi <strong>${userName}</strong>,
             </p>
 
-            <p>
-              Your booking has been successfully
-              confirmed on Eventora.
+            <p
+              style="
+                color:#555;
+                line-height:1.6;
+              "
+            >
+              Your event booking has been successfully
+              confirmed.
             </p>
+
 
             <!-- EVENT DETAILS -->
 
             <div
               style="
-                margin-top: 25px;
-                padding: 20px;
-                background: #f5f5f5;
-                border-radius: 10px;
+                margin-top:20px;
+                padding:20px;
+                background:#f1edff;
+                border-radius:12px;
               "
             >
 
               <h3
                 style="
-                  margin-top: 0;
-                  color: #6C3BFF;
+                  margin-top:0;
+                  color:#6c3bff;
                 "
               >
                 Event Details
               </h3>
 
               <p>
-                <b>Event:</b>
+                <strong>Event:</strong>
                 ${eventName}
               </p>
 
               <p>
-                <b>Date:</b>
+                <strong>Date:</strong>
                 ${formattedDate}
               </p>
 
               <p>
-                <b>Time:</b>
-                ${eventTime || "-"}
+                <strong>Time:</strong>
+                ${eventTime || "N/A"}
               </p>
 
               <p>
-                <b>Location:</b>
-                ${eventLocation || "-"}
+                <strong>Location:</strong>
+                ${eventLocation || "N/A"}
               </p>
 
             </div>
 
-            <!-- BOOKING DETAILS -->
+
+            <!-- TICKET DETAILS -->
 
             <div
               style="
-                margin-top: 20px;
-                padding: 20px;
-                background: #eee8ff;
-                border-radius: 10px;
+                margin-top:20px;
+                padding:20px;
+                border:1px solid #eeeeee;
+                border-radius:12px;
               "
             >
 
               <h3
                 style="
-                  margin-top: 0;
-                  color: #6C3BFF;
+                  margin-top:0;
+                  color:#6c3bff;
                 "
               >
-                Booking Details
+                Ticket Details
               </h3>
 
               <p>
-                <b>Booking ID:</b>
-                ${bookingId || "-"}
-              </p>
-
-              <p>
-                <b>Number of Tickets:</b>
+                <strong>Tickets:</strong>
                 ${numberOfTickets}
               </p>
 
               <p>
-                <b>Ticket Price:</b>
-                ₹${formattedTicketPrice}
+                <strong>Ticket Price:</strong>
+                ₹${ticketPrice}
               </p>
 
-              <hr>
-
-              <p
-                style="
-                  font-size: 18px;
-                  margin-bottom: 0;
-                "
-              >
-                <b>Total Amount:</b>
-
-                <span
-                  style="
-                    color:#6C3BFF;
-                    font-weight:bold;
-                  "
-                >
-                  ₹${formattedTotalAmount}
-                </span>
+              <p>
+                <strong>Total Amount:</strong>
+                ₹${totalAmount}
               </p>
 
             </div>
 
-            <!-- STATUS -->
+
+            <!-- BOOKING ID -->
 
             <div
               style="
-                margin-top: 25px;
-                text-align: center;
-                padding: 15px;
-                background: #dcfce7;
-                border-radius: 8px;
+                margin-top:20px;
+                padding:15px;
+                background:#f7f5f0;
+                border-radius:10px;
               "
             >
 
-              <strong
+              <p
                 style="
-                  color:#15803d;
+                  margin:0;
+                  font-size:13px;
+                  color:#555;
                 "
               >
-                Booking Status: Confirmed
-              </strong>
+                <strong>Booking ID:</strong>
+                ${bookingId}
+              </p>
 
             </div>
 
-            <br>
+          </div>
 
-            <p>
-              Thank you for choosing Eventora.
-              We hope you have a great experience
-              at the event!
-            </p>
 
-            <p>
-              Regards,<br>
-              <b>Eventora Team</b>
+          <!-- FOOTER -->
+
+          <div
+            style="
+              background:#0b1020;
+              padding:18px;
+              text-align:center;
+            "
+          >
+
+            <p
+              style="
+                margin:0;
+                color:#ffffff;
+                font-size:13px;
+              "
+            >
+              Thank you for booking with Eventora.
             </p>
 
           </div>
 
         </div>
-      `,
-    };
 
-    // -------------------------------------------------
-    // SEND EMAIL
-    // -------------------------------------------------
+      </body>
+      </html>
+    `;
 
-    console.log(
-      "Sending booking confirmation email..."
-    );
-
-    const result =
-      await transporter.sendMail(
-        mailOptions
-      );
-
-    console.log(
-      "Booking confirmation email sent:",
-      result.messageId
-    );
-
-    return true;
+    return await sendEmail({
+      to: userEmail,
+      subject:
+        `Booking Confirmed - ${eventName}`,
+      html: html,
+    });
 
   } catch (error) {
-
-    console.log(
-      "Booking confirmation email error:",
+    console.error(
+      "BOOKING EMAIL ERROR:",
       error.message
     );
 
-    return false;
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 };
 
 // =====================================================
-// EXPORT
+// EXPORT ALL EMAIL FUNCTIONS
 // =====================================================
 
 module.exports = {
-
-  verifyEmailConnection,
-
   sendLoginSuccessEmail,
-
   sendAdminReplyEmail,
-
-  sendOrganizerStatusEmail,
-
+  sendOrganizerAcceptedEmail,
   sendBookingConfirmationEmail,
-
 };
