@@ -1,8 +1,13 @@
 
 const nodemailer = require("nodemailer");
 
+// =====================================================
+// EMAIL TRANSPORTER
+// =====================================================
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
+
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -41,34 +46,56 @@ const sendLoginSuccessEmail = async (
   try {
     const mailOptions = {
       from: `"Eventora" <${process.env.EMAIL_USER}>`,
+
       to: userEmail,
+
       subject: "Login Successful - Eventora",
 
       html: `
-        <h2>Welcome to Eventora!</h2>
+        <div
+          style="
+            font-family: Arial, sans-serif;
+            max-width: 650px;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            background: #ffffff;
+          "
+        >
 
-        <p>Hello <b>${userName}</b>,</p>
+          <h2 style="color:#6C3BFF;">
+            Welcome to Eventora!
+          </h2>
 
-        <p>
-          Your login was successful.
-        </p>
+          <p>
+            Hello <b>${userName}</b>,
+          </p>
 
-        <p>
-          You can now explore many exciting events
-          on Eventora.
-        </p>
+          <p>
+            Your login was successful.
+          </p>
 
-        <br>
+          <p>
+            You can now explore many exciting
+            events on Eventora.
+          </p>
 
-        <p>
-          Regards,<br>
-          <b>Eventora Team</b>
-        </p>
+          <br>
+
+          <p>
+            Regards,<br>
+            <b>Eventora Team</b>
+          </p>
+
+        </div>
       `,
     };
 
     const result =
-      await transporter.sendMail(mailOptions);
+      await transporter.sendMail(
+        mailOptions
+      );
 
     console.log(
       "Login success email sent:",
@@ -101,23 +128,30 @@ const sendAdminReplyEmail = async (
   try {
 
     const mailOptions = {
-      from: `"Eventora Admin" <${process.env.EMAIL_USER}>`,
+      from:
+        `"Eventora Admin" <${process.env.EMAIL_USER}>`,
+
       to: userEmail,
-      subject: "Reply from Eventora Admin",
+
+      subject:
+        "Reply from Eventora Admin",
 
       html: `
         <div
           style="
-            font-family: Arial;
+            font-family: Arial, sans-serif;
             max-width: 650px;
             margin: auto;
             padding: 30px;
             border: 1px solid #ddd;
-            border-radius: 10px;
+            border-radius: 12px;
+            background: #ffffff;
           "
         >
 
-          <h2>Eventora Admin Reply</h2>
+          <h2 style="color:#6C3BFF;">
+            Eventora Admin Reply
+          </h2>
 
           <p>
             Hello <b>${userName}</b>,
@@ -153,7 +187,9 @@ const sendAdminReplyEmail = async (
     };
 
     const result =
-      await transporter.sendMail(mailOptions);
+      await transporter.sendMail(
+        mailOptions
+      );
 
     console.log(
       "Admin reply email sent:",
@@ -253,7 +289,8 @@ const sendOrganizerStatusEmail = async (
             margin: auto;
             padding: 30px;
             border: 1px solid #ddd;
-            border-radius: 10px;
+            border-radius: 12px;
+            background: #ffffff;
           "
         >
 
@@ -356,7 +393,9 @@ const sendOrganizerStatusEmail = async (
     );
 
     const result =
-      await transporter.sendMail(mailOptions);
+      await transporter.sendMail(
+        mailOptions
+      );
 
     console.log(
       "Organizer status email sent:",
@@ -377,12 +416,350 @@ const sendOrganizerStatusEmail = async (
 };
 
 // =====================================================
+// BOOKING CONFIRMATION EMAIL
+// =====================================================
+
+const sendBookingConfirmationEmail = async (
+  userEmail,
+  userName,
+  eventName,
+  eventDate,
+  eventTime,
+  eventLocation,
+  numberOfTickets,
+  ticketPrice,
+  totalAmount,
+  bookingId
+) => {
+
+  try {
+
+    console.log(
+      "Preparing booking confirmation email..."
+    );
+
+    console.log(
+      "To:",
+      userEmail
+    );
+
+    console.log(
+      "User:",
+      userName
+    );
+
+    console.log(
+      "Event:",
+      eventName
+    );
+
+    // -------------------------------------------------
+    // FORMAT EVENT DATE
+    // -------------------------------------------------
+
+    let formattedDate = "-";
+
+    if (eventDate) {
+
+      formattedDate =
+        new Date(
+          eventDate
+        ).toLocaleDateString(
+          "en-IN",
+          {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }
+        );
+    }
+
+    // -------------------------------------------------
+    // FORMAT AMOUNTS
+    // -------------------------------------------------
+
+    const formattedTicketPrice =
+      Number(ticketPrice || 0)
+        .toLocaleString("en-IN");
+
+    const formattedTotalAmount =
+      Number(totalAmount || 0)
+        .toLocaleString("en-IN");
+
+    // -------------------------------------------------
+    // EMAIL
+    // -------------------------------------------------
+
+    const mailOptions = {
+
+      from:
+        `"Eventora" <${process.env.EMAIL_USER}>`,
+
+      to: userEmail,
+
+      subject:
+        `Booking Confirmed - ${eventName}`,
+
+      html: `
+        <div
+          style="
+            font-family: Arial, sans-serif;
+            max-width: 680px;
+            margin: auto;
+            background: #f7f5f0;
+            padding: 30px;
+          "
+        >
+
+          <!-- HEADER -->
+
+          <div
+            style="
+              background: linear-gradient(
+                135deg,
+                #0B1020,
+                #6C3BFF
+              );
+              padding: 28px;
+              border-radius: 14px 14px 0 0;
+              text-align: center;
+              color: white;
+            "
+          >
+
+            <h1
+              style="
+                margin: 0;
+                font-size: 28px;
+              "
+            >
+              Eventora
+            </h1>
+
+            <p
+              style="
+                margin: 8px 0 0;
+                font-size: 15px;
+              "
+            >
+              Event Booking Confirmation
+            </p>
+
+          </div>
+
+          <!-- CONTENT -->
+
+          <div
+            style="
+              background: white;
+              padding: 30px;
+              border-radius: 0 0 14px 14px;
+            "
+          >
+
+            <h2
+              style="
+                color: #16a34a;
+                margin-top: 0;
+              "
+            >
+              ✓ Booking Confirmed
+            </h2>
+
+            <p>
+              Hello <b>${userName}</b>,
+            </p>
+
+            <p>
+              Your booking has been successfully
+              confirmed on Eventora.
+            </p>
+
+            <!-- EVENT DETAILS -->
+
+            <div
+              style="
+                margin-top: 25px;
+                padding: 20px;
+                background: #f5f5f5;
+                border-radius: 10px;
+              "
+            >
+
+              <h3
+                style="
+                  margin-top: 0;
+                  color: #6C3BFF;
+                "
+              >
+                Event Details
+              </h3>
+
+              <p>
+                <b>Event:</b>
+                ${eventName}
+              </p>
+
+              <p>
+                <b>Date:</b>
+                ${formattedDate}
+              </p>
+
+              <p>
+                <b>Time:</b>
+                ${eventTime || "-"}
+              </p>
+
+              <p>
+                <b>Location:</b>
+                ${eventLocation || "-"}
+              </p>
+
+            </div>
+
+            <!-- BOOKING DETAILS -->
+
+            <div
+              style="
+                margin-top: 20px;
+                padding: 20px;
+                background: #eee8ff;
+                border-radius: 10px;
+              "
+            >
+
+              <h3
+                style="
+                  margin-top: 0;
+                  color: #6C3BFF;
+                "
+              >
+                Booking Details
+              </h3>
+
+              <p>
+                <b>Booking ID:</b>
+                ${bookingId || "-"}
+              </p>
+
+              <p>
+                <b>Number of Tickets:</b>
+                ${numberOfTickets}
+              </p>
+
+              <p>
+                <b>Ticket Price:</b>
+                ₹${formattedTicketPrice}
+              </p>
+
+              <hr>
+
+              <p
+                style="
+                  font-size: 18px;
+                  margin-bottom: 0;
+                "
+              >
+                <b>Total Amount:</b>
+
+                <span
+                  style="
+                    color:#6C3BFF;
+                    font-weight:bold;
+                  "
+                >
+                  ₹${formattedTotalAmount}
+                </span>
+              </p>
+
+            </div>
+
+            <!-- STATUS -->
+
+            <div
+              style="
+                margin-top: 25px;
+                text-align: center;
+                padding: 15px;
+                background: #dcfce7;
+                border-radius: 8px;
+              "
+            >
+
+              <strong
+                style="
+                  color:#15803d;
+                "
+              >
+                Booking Status: Confirmed
+              </strong>
+
+            </div>
+
+            <br>
+
+            <p>
+              Thank you for choosing Eventora.
+              We hope you have a great experience
+              at the event!
+            </p>
+
+            <p>
+              Regards,<br>
+              <b>Eventora Team</b>
+            </p>
+
+          </div>
+
+        </div>
+      `,
+    };
+
+    // -------------------------------------------------
+    // SEND EMAIL
+    // -------------------------------------------------
+
+    console.log(
+      "Sending booking confirmation email..."
+    );
+
+    const result =
+      await transporter.sendMail(
+        mailOptions
+      );
+
+    console.log(
+      "Booking confirmation email sent:",
+      result.messageId
+    );
+
+    return true;
+
+  } catch (error) {
+
+    console.log(
+      "Booking confirmation email error:",
+      error.message
+    );
+
+    return false;
+  }
+};
+
+// =====================================================
 // EXPORT
 // =====================================================
 
 module.exports = {
+
   verifyEmailConnection,
+
   sendLoginSuccessEmail,
+
   sendAdminReplyEmail,
+
   sendOrganizerStatusEmail,
+
+  sendBookingConfirmationEmail,
+
 };
