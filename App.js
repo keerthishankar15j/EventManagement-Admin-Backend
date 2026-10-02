@@ -9,7 +9,7 @@ const eventRoutes = require("./src/Router/EventRouter");
 const loginActivityRoutes = require("./src/Router/UserActivityRouter");
 const userContactRoutes = require("./src/Router/UserContactRouter");
 const OrganizationRouter = require("./src/Router/OrganizationRouter");
-
+const bookingRoutes = require("./src/Router/BookingRouter");
 const app = express();
 
 // =====================================================
@@ -160,6 +160,30 @@ app.get("/", async (req, res) => {
   }
 });
 
+// =====================================================
+// BOOKINGS
+// =====================================================
+
+app.use(
+  "/bookings",
+  async (req, res, next) => {
+    try {
+      await connectDB();
+      next();
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Database connection failed",
+        error: error.message,
+      });
+    }
+  }
+);
+
+app.use(
+  "/bookings",
+  bookingRoutes
+);
 // =====================================================
 // EVENTS
 // =====================================================
