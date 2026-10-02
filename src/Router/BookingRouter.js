@@ -1,14 +1,14 @@
 const express = require("express");
 
+const BookTicketModel = require("../Model/BookTicketModel");
+
 const router = express.Router();
 
 router.get("/getbookings", (req, res) => {
-  console.log("BOOKING ROUTE WORKING");
-
   return res.status(200).json({
     success: true,
-    message: "Booking route is working!",
-    bookings: [],
+    message: "BookTicketModel imported successfully",
+    modelName: BookTicketModel.modelName,
   });
 });
 
